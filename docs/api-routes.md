@@ -16,6 +16,8 @@ Resposta esperada:
 }
 ```
 
+## Campeonatos
+
 ### POST /tournaments
 
 Cria um campeonato com status inicial `DRAFT`.
@@ -33,12 +35,12 @@ Body:
 }
 ```
 
-Validações:
+Validacoes:
 
-- `name` é obrigatório.
-- `format` é obrigatório.
+- `name` e obrigatorio.
+- `format` e obrigatorio.
 - `format` deve ser `LEAGUE`, `KNOCKOUT` ou `LEAGUE_KNOCKOUT`.
-- `qualifiedCount` é obrigatório quando `format` for `LEAGUE_KNOCKOUT`.
+- `qualifiedCount` e obrigatorio quando `format` for `LEAGUE_KNOCKOUT`.
 - `qualifiedCount` deve ser `2`, `4`, `8` ou `16` quando informado.
 
 ### GET /tournaments
@@ -51,11 +53,85 @@ Busca um campeonato por ID.
 
 ### PATCH /tournaments/:id
 
-Atualiza dados básicos de um campeonato.
+Atualiza dados basicos de um campeonato.
 
 ### DELETE /tournaments/:id
 
-Remove fisicamente um campeonato. Nesta etapa ainda não há partidas associadas.
+Remove fisicamente um campeonato.
+
+## Participantes
+
+### GET /tournaments/:tournamentId/participants
+
+Lista participantes de um campeonato.
+
+Regras:
+
+- Retorna `404` se o campeonato nao existir.
+
+### POST /tournaments/:tournamentId/participants
+
+Cria um participante dentro de um campeonato.
+
+Body:
+
+```json
+{
+  "name": "Jogador 1",
+  "nickname": "jogador1",
+  "teamName": "Real Madrid"
+}
+```
+
+Validacoes e regras:
+
+- `name` e obrigatorio.
+- `nickname` e opcional.
+- `teamName` e opcional.
+- O status inicial do participante e `ACTIVE`.
+- Retorna `404` se o campeonato nao existir.
+- Retorna `409` se o campeonato nao estiver em `DRAFT`.
+- Nao permite dois participantes com o mesmo `name` no mesmo campeonato.
+- Nao permite dois participantes com o mesmo `nickname` no mesmo campeonato quando `nickname` for informado.
+
+### GET /participants/:id
+
+Busca um participante por ID.
+
+Regras:
+
+- Retorna `404` se o participante nao existir.
+
+### PATCH /participants/:id
+
+Atualiza dados basicos de um participante.
+
+Body:
+
+```json
+{
+  "name": "Jogador Atualizado",
+  "nickname": "novo-nick",
+  "teamName": "Barcelona"
+}
+```
+
+Validacoes e regras:
+
+- `name`, `nickname` e `teamName` sao opcionais no update.
+- `name`, quando informado, nao pode ser vazio.
+- Retorna `404` se o participante nao existir.
+- Retorna `409` se o campeonato do participante nao estiver em `DRAFT`.
+- Mantem as regras de unicidade de `name` e `nickname` dentro do campeonato.
+
+### DELETE /participants/:id
+
+Remove fisicamente um participante.
+
+Regras:
+
+- Retorna `404` se o participante nao existir.
+- Retorna `409` se o campeonato do participante nao estiver em `DRAFT`.
 
 ## Rotas planejadas
 
@@ -66,21 +142,11 @@ Remove fisicamente um campeonato. Nesta etapa ainda não há partidas associadas
 
 ### Campeonatos
 
-- Regras de transição de status.
+- Regras de transicao de status.
 - Encerramento de campeonato.
-- Duplicação de campeonato.
-
-### Participantes
-
-- `POST /tournaments/:tournamentId/participants`
-- `GET /tournaments/:tournamentId/participants`
-- `PATCH /participants/:id`
+- Duplicacao de campeonato.
 
 ### Partidas
 
 - `GET /tournaments/:tournamentId/matches`
 - `PATCH /matches/:id/result`
-
-## Observacoes
-
-As rotas acima ainda nao foram implementadas. Elas servem como guia inicial para o MVP.

@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import { participantsRouter } from './modules/participants/participants.routes.js';
 import { tournamentsRouter } from './modules/tournaments/tournaments.routes.js';
 import { errorHandler } from './shared/middlewares/error-handler.js';
 import { notFoundHandler } from './shared/middlewares/not-found-handler.js';
@@ -18,6 +19,7 @@ app.get('/health', (_request, response) => {
 });
 
 app.use('/tournaments', tournamentsRouter);
+app.use('/participants', participantsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
