@@ -66,4 +66,10 @@ export const tournamentsController = {
 
     response.status(204).send();
   },
+
+  async start(request: Request, response: Response) {
+    const tournament = await tournamentsService.start(getTournamentId(request));
+
+    response.status(200).json(tournament);
+  },
 };

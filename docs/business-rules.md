@@ -38,6 +38,22 @@ Fases planejadas:
 - `THIRD_PLACE`
 - `FINAL`
 
+## Inicio de campeonatos de liga
+
+Nesta etapa, apenas campeonatos com formato `LEAGUE` podem ser iniciados automaticamente.
+
+Regras:
+
+1. O campeonato precisa existir.
+2. O campeonato precisa estar com status `DRAFT`.
+3. O campeonato precisa ter pelo menos 3 participantes.
+4. Formatos `KNOCKOUT` e `LEAGUE_KNOCKOUT` ainda nao podem ser iniciados.
+5. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
+6. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
+7. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+8. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+9. O campeonato nao pode ser iniciado duas vezes.
+
 ## Decisoes pendentes
 
 1. Criterios de desempate na liga.

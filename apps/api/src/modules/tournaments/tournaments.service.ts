@@ -126,4 +126,94 @@ export const tournamentsService = {
       where: { id },
     });
   },
+
+  async start(id: string) {
+    return prisma.$transaction(async (transaction) => {
+      const tournament = await transaction.tournament.findUnique({
+        where: { id },
+        include: {
+          participants: {
+            select: { id: true },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      });
+
+      if (!tournament) {
+        throw new AppError('Tournament not found', 404);
+      }
+
+      if (tournament.status !== 'DRAFT') {
+        throw new AppError('Tournament has already been started', 409);
+      }
+
+      if (tournament.format !== 'LEAGUE') {
+        throw new AppError('Only LEAGUE tournaments can be started for now', 400);
+      }
+
+      if (tournament.participants.length < 3) {
+        throw new AppError('Tournament must have at least 3 participants to start', 400);
+      }
+
+      const existingMatchesCount = await transaction.match.count({
+        where: { tournamentId: id },
+      });
+
+      if (existingMatchesCount > 0) {
+        throw new AppError('Tournament already has generated matches', 409);
+      }
+
+      const matchesToCreate = [];
+      let matchOrder = 1;
+
+      for (let homeIndex = 0; homeIndex < tournament.participants.length; homeIndex += 1) {
+        for (
+          let awayIndex = homeIndex + 1;
+          awayIndex < tournament.participants.length;
+          awayIndex += 1
+        ) {
+          const homeParticipant = tournament.participants[homeIndex];
+          const awayParticipant = tournament.participants[awayIndex];
+
+          matchesToCreate.push({
+            tournamentId: id,
+            phase: 'LEAGUE' as const,
+            round: matchOrder,
+            homeParticipantId: homeParticipant.id,
+            awayParticipantId: awayParticipant.id,
+            status: 'PENDING' as const,
+            matchOrder,
+          });
+          matchOrder += 1;
+
+          if (tournament.isTwoLegged) {
+            matchesToCreate.push({
+              tournamentId: id,
+              phase: 'LEAGUE' as const,
+              round: matchOrder,
+              homeParticipantId: awayParticipant.id,
+              awayParticipantId: homeParticipant.id,
+              status: 'PENDING' as const,
+              matchOrder,
+            });
+            matchOrder += 1;
+          }
+        }
+      }
+
+      await transaction.match.createMany({
+        data: matchesToCreate,
+      });
+
+      return transaction.tournament.update({
+        where: { id },
+        data: { status: 'IN_PROGRESS' },
+        include: {
+          matches: {
+            orderBy: { matchOrder: 'asc' },
+          },
+        },
+      });
+    });
+  },
 };

@@ -59,6 +59,29 @@ Atualiza dados basicos de um campeonato.
 
 Remove fisicamente um campeonato.
 
+### POST /tournaments/:id/start
+
+Inicia um campeonato e gera automaticamente partidas de liga.
+
+Regras:
+
+- Retorna `404` se o campeonato nao existir.
+- Retorna `409` se o campeonato ja tiver sido iniciado.
+- Retorna `400` se o campeonato tiver menos de 3 participantes.
+- Retorna `400` se o formato for `KNOCKOUT` ou `LEAGUE_KNOCKOUT`.
+- Atualmente apenas campeonatos `LEAGUE` podem ser iniciados.
+- A geracao de partidas e a alteracao de status para `IN_PROGRESS` acontecem em uma transaction.
+
+Resposta:
+
+```json
+{
+  "id": "tournament-id",
+  "status": "IN_PROGRESS",
+  "matches": []
+}
+```
+
 ## Participantes
 
 ### GET /tournaments/:tournamentId/participants
@@ -146,7 +169,17 @@ Regras:
 - Encerramento de campeonato.
 - Duplicacao de campeonato.
 
-### Partidas
+## Partidas
 
-- `GET /tournaments/:tournamentId/matches`
+### GET /tournaments/:tournamentId/matches
+
+Lista partidas de um campeonato.
+
+Regras:
+
+- Retorna `404` se o campeonato nao existir.
+- As partidas sao ordenadas por `round` e `matchOrder`.
+
+## Rotas planejadas
+
 - `PATCH /matches/:id/result`
