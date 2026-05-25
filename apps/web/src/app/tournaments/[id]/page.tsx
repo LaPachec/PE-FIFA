@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ParticipantsManager } from '@/components/participants/participants-manager';
 import { getTournament } from '@/services/tournaments';
 
 const formatLabels = {
@@ -36,7 +37,7 @@ export default async function TournamentDetailsPage({
           </p>
           <h1 className="mt-3 text-4xl font-bold">{tournament.name}</h1>
           <p className="mt-4 max-w-2xl text-slate-300">
-            {tournament.description ?? 'Campeonato sem descrição.'}
+            {tournament.description ?? 'Campeonato sem descricao.'}
           </p>
         </div>
 
@@ -50,19 +51,19 @@ export default async function TournamentDetailsPage({
           <div className="rounded-md border border-white/10 bg-white/5 p-5">
             <span className="text-sm text-slate-400">Ida e volta</span>
             <strong className="mt-2 block text-lg text-white">
-              {tournament.isTwoLegged ? 'Sim' : 'Não'}
+              {tournament.isTwoLegged ? 'Sim' : 'Nao'}
             </strong>
           </div>
           <div className="rounded-md border border-white/10 bg-white/5 p-5">
             <span className="text-sm text-slate-400">Terceiro lugar</span>
             <strong className="mt-2 block text-lg text-white">
-              {tournament.hasThirdPlaceMatch ? 'Sim' : 'Não'}
+              {tournament.hasThirdPlaceMatch ? 'Sim' : 'Nao'}
             </strong>
           </div>
           <div className="rounded-md border border-white/10 bg-white/5 p-5">
             <span className="text-sm text-slate-400">Classificados</span>
             <strong className="mt-2 block text-lg text-white">
-              {tournament.qualifiedCount ?? 'Não se aplica'}
+              {tournament.qualifiedCount ?? 'Nao se aplica'}
             </strong>
           </div>
           <div className="rounded-md border border-white/10 bg-white/5 p-5">
@@ -76,6 +77,11 @@ export default async function TournamentDetailsPage({
             </strong>
           </div>
         </div>
+
+        <ParticipantsManager
+          tournamentId={tournament.id}
+          tournamentStatus={tournament.status}
+        />
       </section>
     </main>
   );
