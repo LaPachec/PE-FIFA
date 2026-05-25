@@ -62,3 +62,9 @@ export function createTournament(payload: CreateTournamentPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function startTournament(id: string) {
+  return request<Tournament>(`/tournaments/${id}/start`, {
+    method: 'POST',
+  });
+}

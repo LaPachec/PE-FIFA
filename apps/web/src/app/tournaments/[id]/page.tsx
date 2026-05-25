@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { TournamentMatches } from '@/components/matches/tournament-matches';
 import { notFound } from 'next/navigation';
 import { ParticipantsManager } from '@/components/participants/participants-manager';
 import { getTournament } from '@/services/tournaments';
@@ -79,6 +80,11 @@ export default async function TournamentDetailsPage({
         </div>
 
         <ParticipantsManager
+          tournamentId={tournament.id}
+          tournamentStatus={tournament.status}
+        />
+
+        <TournamentMatches
           tournamentId={tournament.id}
           tournamentStatus={tournament.status}
         />
