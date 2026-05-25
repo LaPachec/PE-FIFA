@@ -46,7 +46,8 @@ pnpm docker:restart
 As credenciais abaixo sao apenas para desenvolvimento local:
 
 - Host: `localhost`
-- Porta: `5432`
+- Porta no host: `5433`
+- Porta interna do container: `5432`
 - Database: `fifa_tournament`
 - Usuario: `fifa_user`
 - Senha: `fifa_password`
@@ -54,7 +55,7 @@ As credenciais abaixo sao apenas para desenvolvimento local:
 URL de conexao:
 
 ```env
-DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5432/fifa_tournament?schema=public"
+DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5433/fifa_tournament?schema=public"
 ```
 
 ## Adminer

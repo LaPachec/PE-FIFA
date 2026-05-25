@@ -9,6 +9,18 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     return;
   }
 
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    typeof error.statusCode === 'number'
+  ) {
+    response.status(error.statusCode).json({
+      message: error instanceof Error ? error.message : 'Request error',
+    });
+    return;
+  }
+
   console.error(error);
 
   response.status(500).json({

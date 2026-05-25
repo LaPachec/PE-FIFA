@@ -242,7 +242,7 @@ Validações iniciais:
 Crie um arquivo `.env` na raiz com base no `.env.example`.
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/fifa_tournament_manager?schema=public"
+DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5433/fifa_tournament?schema=public"
 PORT=3333
 NODE_ENV=development
 NEXT_PUBLIC_API_URL="http://localhost:3333"
@@ -306,7 +306,8 @@ pnpm docker:restart
 As credenciais abaixo são apenas para desenvolvimento:
 
 - Host: `localhost`
-- Porta: `5432`
+- Porta no host: `5433`
+- Porta interna do container: `5432`
 - Database: `fifa_tournament`
 - Usuário: `fifa_user`
 - Senha: `fifa_password`
@@ -314,7 +315,7 @@ As credenciais abaixo são apenas para desenvolvimento:
 URL usada pelo Prisma:
 
 ```env
-DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5432/fifa_tournament?schema=public"
+DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5433/fifa_tournament?schema=public"
 ```
 
 ### Adminer
