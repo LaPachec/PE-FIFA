@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fifa_tournament_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fifa_tournament
+      POSTGRES_USER: fifa_user
+      POSTGRES_PASSWORD: fifa_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fifa_user -d fifa_tournament"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:4
+    container_name: fifa_tournament_adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

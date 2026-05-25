@@ -1,0 +1,26 @@
+{
+  "name": "fifa-tournament-manager",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "typecheck": "turbo run typecheck",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f postgres",
+    "docker:restart": "docker compose restart",
+    "db:generate": "turbo run db:generate --filter=@fifa-tournament-manager/database",
+    "db:migrate": "turbo run db:migrate --filter=@fifa-tournament-manager/database",
+    "db:studio": "turbo run db:studio --filter=@fifa-tournament-manager/database",
+    "db:reset": "turbo run db:reset --filter=@fifa-tournament-manager/database"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3"
+  }
+}

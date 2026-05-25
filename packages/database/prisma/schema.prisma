@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TournamentFormat {
+  LEAGUE
+  KNOCKOUT
+  LEAGUE_KNOCKOUT
+}
+
+enum TournamentStatus {
+  DRAFT
+  IN_PROGRESS
+  KNOCKOUT_STAGE
+  FINISHED
+}
+
+enum ParticipantStatus {
+  ACTIVE
+  ELIMINATED
+  CHAMPION
+}
+
+enum MatchStatus {
+  PENDING
+  FINISHED
+}
+
+enum MatchPhase {
+  LEAGUE
+  ROUND_OF_16
+  QUARTER_FINAL
+  SEMI_FINAL
+  THIRD_PLACE
+  FINAL
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  tournaments  Tournament[]
+
+  @@map("users")
+}
+
+model Tournament {
+  id                 String             @id @default(cuid())
+  ownerId            String
+  name               String
+  slug               String             @unique
+  description        String?
+  format             TournamentFormat
+  status             TournamentStatus   @default(DRAFT)
+  isTwoLegged        Boolean            @default(false)
+  qualifiedCount     Int?
+  hasThirdPlaceMatch Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  owner              User               @relation(fields: [ownerId], references: [id])
+  participants       Participant[]
+  matches            Match[]
+
+  @@index([ownerId])
+  @@map("tournaments")
+}
+
+model Participant {
+  id                  String            @id @default(cuid())
+  tournamentId        String
+  name                String
+  nickname            String?
+  teamName            String?
+  status              ParticipantStatus @default(ACTIVE)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  tournament          Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  homeMatches         Match[]           @relation("HomeParticipant")
+  awayMatches         Match[]           @relation("AwayParticipant")
+  wonMatches          Match[]           @relation("WinnerParticipant")
+
+  @@index([tournamentId])
+  @@map("participants")
+}
+
+model Match {
+  id                  String        @id @default(cuid())
+  tournamentId        String
+  phase               MatchPhase
+  round               Int?
+  homeParticipantId   String?
+  awayParticipantId   String?
+  homeScore           Int?
+  awayScore           Int?
+  homePenaltyScore    Int?
+  awayPenaltyScore    Int?
+  winnerParticipantId String?
+  status              MatchStatus   @default(PENDING)
+  matchOrder          Int
+  nextMatchId         String?
+  nextMatchSlot       String?
+  playedAt            DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  tournament          Tournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  homeParticipant     Participant?  @relation("HomeParticipant", fields: [homeParticipantId], references: [id])
+  awayParticipant     Participant?  @relation("AwayParticipant", fields: [awayParticipantId], references: [id])
+  winnerParticipant   Participant?  @relation("WinnerParticipant", fields: [winnerParticipantId], references: [id])
+  nextMatch           Match?        @relation("MatchProgression", fields: [nextMatchId], references: [id])
+  previousMatches     Match[]       @relation("MatchProgression")
+
+  @@index([tournamentId])
+  @@index([homeParticipantId])
+  @@index([awayParticipantId])
+  @@index([winnerParticipantId])
+  @@index([nextMatchId])
+  @@map("matches")
+}
