@@ -15,6 +15,34 @@ Os formatos planejados sao:
 - `KNOCKOUT`
 - `LEAGUE_KNOCKOUT`
 
+## Autenticacao
+
+Usuarios reais acessam rotas privadas usando token JWT.
+
+Regras:
+
+1. Cadastro exige `name`, `email` e `password`.
+2. `email` precisa ser unico.
+3. `password` precisa ter no minimo 6 caracteres.
+4. Senhas nunca sao retornadas pela API.
+5. Senhas sao armazenadas como hash.
+6. Login retorna `401` quando as credenciais sao invalidas.
+7. Rotas privadas exigem header `Authorization: Bearer <token>`.
+8. O token contem `userId` e e assinado com `JWT_SECRET`.
+9. `/auth/me` retorna apenas dados basicos do usuario autenticado.
+
+## Ownership de campeonatos
+
+Campeonatos pertencem ao usuario autenticado que os criou.
+
+Regras:
+
+1. Ao criar campeonato, `ownerId` recebe o ID do usuario autenticado.
+2. A listagem privada mostra apenas campeonatos do usuario autenticado.
+3. Buscar, editar, remover, iniciar, finalizar ou gerar mata-mata exige que o campeonato pertenca ao usuario autenticado.
+4. Rotas publicas por `slug` continuam sem autenticacao.
+5. Dados sensiveis do usuario dono nao devem ser expostos em endpoints publicos.
+
 ## Participantes
 
 Um participante pertence a um campeonato e pode representar um jogador, apelido e time usado no FIFA/EA FC.

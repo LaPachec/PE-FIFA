@@ -1,32 +1,10 @@
-import {
-  prisma,
-  type MatchPhase,
-  type TournamentFormat,
-} from '@fifa-tournament-manager/database';
+import { prisma, type MatchPhase, type TournamentFormat } from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
 import { calculateLeagueStandings } from '../standings/standings.service.js';
 import type {
   CreateTournamentInput,
   UpdateTournamentInput,
 } from './tournaments.schemas.js';
-
-const TEMP_OWNER_EMAIL = 'local-owner@fifa-tournament-manager.dev';
-
-async function getTemporaryOwnerId() {
-  // Temporary owner until real authentication is implemented.
-  const owner = await prisma.user.upsert({
-    where: { email: TEMP_OWNER_EMAIL },
-    update: {},
-    create: {
-      name: 'Local Owner',
-      email: TEMP_OWNER_EMAIL,
-      passwordHash: 'temporary-password-hash',
-    },
-    select: { id: true },
-  });
-
-  return owner.id;
-}
 
 function createSlug(name: string) {
   return name
@@ -233,8 +211,7 @@ function createLeagueKnockoutStageMatches(
 }
 
 export const tournamentsService = {
-  async create(input: CreateTournamentInput) {
-    const ownerId = await getTemporaryOwnerId();
+  async create(input: CreateTournamentInput, ownerId: string) {
     const slug = await createUniqueSlug(input.name);
 
     return prisma.tournament.create({
@@ -252,15 +229,16 @@ export const tournamentsService = {
     });
   },
 
-  async list() {
+  async list(ownerId: string) {
     return prisma.tournament.findMany({
+      where: { ownerId },
       orderBy: { createdAt: 'desc' },
     });
   },
 
-  async findById(id: string) {
-    const tournament = await prisma.tournament.findUnique({
-      where: { id },
+  async findById(id: string, ownerId: string) {
+    const tournament = await prisma.tournament.findFirst({
+      where: { id, ownerId },
     });
 
     if (!tournament) {
@@ -270,8 +248,8 @@ export const tournamentsService = {
     return tournament;
   },
 
-  async update(id: string, input: UpdateTournamentInput) {
-    const currentTournament = await this.findById(id);
+  async update(id: string, input: UpdateTournamentInput, ownerId: string) {
+    const currentTournament = await this.findById(id, ownerId);
     const nextFormat = input.format ?? currentTournament.format;
     const nextQualifiedCount =
       input.qualifiedCount !== undefined
@@ -299,18 +277,18 @@ export const tournamentsService = {
     });
   },
 
-  async delete(id: string) {
-    await this.findById(id);
+  async delete(id: string, ownerId: string) {
+    await this.findById(id, ownerId);
 
     await prisma.tournament.delete({
       where: { id },
     });
   },
 
-  async start(id: string) {
+  async start(id: string, ownerId: string) {
     return prisma.$transaction(async (transaction) => {
-      const tournament = await transaction.tournament.findUnique({
-        where: { id },
+      const tournament = await transaction.tournament.findFirst({
+        where: { id, ownerId },
         include: {
           participants: {
             select: { id: true },
@@ -379,10 +357,10 @@ export const tournamentsService = {
     });
   },
 
-  async finish(id: string) {
+  async finish(id: string, ownerId: string) {
     return prisma.$transaction(async (transaction) => {
-      const tournament = await transaction.tournament.findUnique({
-        where: { id },
+      const tournament = await transaction.tournament.findFirst({
+        where: { id, ownerId },
         include: {
           participants: {
             orderBy: { name: 'asc' },
@@ -441,10 +419,10 @@ export const tournamentsService = {
     });
   },
 
-  async generateKnockoutStage(id: string) {
+  async generateKnockoutStage(id: string, ownerId: string) {
     return prisma.$transaction(async (transaction) => {
-      const tournament = await transaction.tournament.findUnique({
-        where: { id },
+      const tournament = await transaction.tournament.findFirst({
+        where: { id, ownerId },
         include: {
           participants: {
             orderBy: { name: 'asc' },

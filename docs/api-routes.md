@@ -16,6 +16,66 @@ Resposta esperada:
 }
 ```
 
+## Autenticacao
+
+### POST /auth/register
+
+Cria um usuario real da aplicacao e retorna um token JWT.
+
+Body:
+
+```json
+{
+  "name": "Lucas",
+  "email": "lucas@example.com",
+  "password": "123456"
+}
+```
+
+Regras:
+
+- `name`, `email` e `password` sao obrigatorios.
+- `email` deve ser unico.
+- `password` deve ter no minimo 6 caracteres.
+- A senha e armazenada como hash.
+- Retorna `409` se o email ja estiver em uso.
+- Nao retorna `passwordHash`.
+
+### POST /auth/login
+
+Autentica um usuario existente e retorna um token JWT.
+
+Body:
+
+```json
+{
+  "email": "lucas@example.com",
+  "password": "123456"
+}
+```
+
+Regras:
+
+- `email` e `password` sao obrigatorios.
+- Retorna `401` se as credenciais forem invalidas.
+- Nao retorna `passwordHash`.
+
+### GET /auth/me
+
+Retorna os dados basicos do usuario autenticado.
+
+Headers:
+
+```http
+Authorization: Bearer <token>
+```
+
+Regras:
+
+- Exige token JWT valido.
+- Retorna `401` se o token estiver ausente, invalido ou expirado.
+- Nao retorna `passwordHash`.
+
 ## Rotas publicas
 
 ### GET /public/tournaments/:slug
@@ -52,6 +112,8 @@ Resposta:
 
 ## Campeonatos
 
+As rotas privadas de campeonatos exigem autenticacao via `Authorization: Bearer <token>`.
+
 ### POST /tournaments
 
 Cria um campeonato com status inicial `DRAFT`.
@@ -76,10 +138,11 @@ Validacoes:
 - `format` deve ser `LEAGUE`, `KNOCKOUT` ou `LEAGUE_KNOCKOUT`.
 - `qualifiedCount` e obrigatorio quando `format` for `LEAGUE_KNOCKOUT`.
 - `qualifiedCount` deve ser `2`, `4`, `8` ou `16` quando informado.
+- `ownerId` e definido automaticamente pelo usuario autenticado.
 
 ### GET /tournaments
 
-Lista campeonatos cadastrados.
+Lista apenas campeonatos do usuario autenticado.
 
 ### GET /tournaments/:id
 
@@ -89,9 +152,17 @@ Busca um campeonato por ID.
 
 Atualiza dados basicos de um campeonato.
 
+Regras:
+
+- O campeonato precisa pertencer ao usuario autenticado.
+
 ### DELETE /tournaments/:id
 
 Remove fisicamente um campeonato.
+
+Regras:
+
+- O campeonato precisa pertencer ao usuario autenticado.
 
 ### POST /tournaments/:id/start
 
@@ -100,6 +171,7 @@ Inicia um campeonato e gera automaticamente as partidas iniciais conforme o form
 Regras:
 
 - Retorna `404` se o campeonato nao existir.
+- Retorna `404` se o campeonato nao pertencer ao usuario autenticado.
 - Retorna `409` se o campeonato ja tiver sido iniciado.
 - Para `LEAGUE`, retorna `400` se o campeonato tiver menos de 3 participantes.
 - Para `KNOCKOUT`, retorna `400` se o campeonato nao tiver exatamente 4, 8 ou 16 participantes.
