@@ -2,9 +2,12 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  approveParticipant,
   createParticipant,
   deleteParticipant,
+  getPendingParticipants,
   getParticipants,
+  rejectParticipant,
   updateParticipant,
   type Participant,
 } from '@/services/participants';
@@ -41,11 +44,16 @@ export function ParticipantsManager({
 }: ParticipantsManagerProps) {
   const canManageParticipants = tournamentStatus === 'DRAFT';
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [pendingParticipants, setPendingParticipants] = useState<Participant[]>([]);
   const [form, setForm] = useState<ParticipantFormState>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingForm, setEditingForm] = useState<ParticipantFormState>(emptyForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    id: string;
+    type: 'approve' | 'reject';
+  } | null>(null);
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -61,8 +69,13 @@ export function ParticipantsManager({
     setFeedback(null);
 
     try {
-      const nextParticipants = await getParticipants(tournamentId);
+      const [nextParticipants, nextPendingParticipants] = await Promise.all([
+        getParticipants(tournamentId),
+        canManageParticipants ? getPendingParticipants(tournamentId) : Promise.resolve([]),
+      ]);
+
       setParticipants(nextParticipants);
+      setPendingParticipants(nextPendingParticipants);
     } catch (error) {
       setFeedback({
         type: 'error',
@@ -74,7 +87,7 @@ export function ParticipantsManager({
     } finally {
       setIsLoading(false);
     }
-  }, [tournamentId]);
+  }, [canManageParticipants, tournamentId]);
 
   useEffect(() => {
     void loadParticipants();
@@ -157,6 +170,49 @@ export function ParticipantsManager({
     }
   }
 
+  async function handleApprove(participantId: string) {
+    setFeedback(null);
+    setPendingAction({ id: participantId, type: 'approve' });
+
+    try {
+      const participant = await approveParticipant(participantId);
+      setPendingParticipants((currentParticipants) =>
+        currentParticipants.filter((currentParticipant) => currentParticipant.id !== participantId),
+      );
+      setParticipants((currentParticipants) => [...currentParticipants, participant]);
+      setFeedback({ type: 'success', message: 'Inscricao aprovada com sucesso.' });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message:
+          error instanceof Error ? error.message : 'Nao foi possivel aprovar a inscricao.',
+      });
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleReject(participantId: string) {
+    setFeedback(null);
+    setPendingAction({ id: participantId, type: 'reject' });
+
+    try {
+      await rejectParticipant(participantId);
+      setPendingParticipants((currentParticipants) =>
+        currentParticipants.filter((participant) => participant.id !== participantId),
+      );
+      setFeedback({ type: 'success', message: 'Inscricao rejeitada com sucesso.' });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message:
+          error instanceof Error ? error.message : 'Nao foi possivel rejeitar a inscricao.',
+      });
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
   return (
     <SectionShell
       title="Participantes"
@@ -224,6 +280,91 @@ export function ParticipantsManager({
         >
           {feedback.message}
         </div>
+      ) : null}
+
+      {canManageParticipants ? (
+        <section className="mt-6 rounded-xl border border-arena-700 bg-arena-850 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white">Inscricoes pendentes</h3>
+              <p className="mt-1 text-sm text-zinc-400">
+                Aprove ou rejeite participantes inscritos pelo link de convite.
+              </p>
+            </div>
+            <span className="inline-flex w-fit rounded-full border border-gold-500/30 bg-gold-500/10 px-3 py-1 text-xs font-bold text-gold-400">
+              {pendingParticipants.length} pendente{pendingParticipants.length === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <div className="mt-5">
+            {isLoading ? (
+              <div className="rounded-xl border border-arena-700 bg-arena-900 p-5 text-sm text-zinc-400">
+                Carregando inscricoes pendentes...
+              </div>
+            ) : pendingParticipants.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-arena-700 p-6 text-center text-sm text-zinc-400">
+                Nenhuma inscricao pendente.
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {pendingParticipants.map((participant) => {
+                  const isApproving =
+                    pendingAction?.id === participant.id && pendingAction.type === 'approve';
+                  const isRejecting =
+                    pendingAction?.id === participant.id && pendingAction.type === 'reject';
+
+                  return (
+                    <div
+                      key={participant.id}
+                      className="grid gap-3 rounded-xl border border-arena-700 bg-arena-900 p-4 lg:grid-cols-[1.2fr_1fr_1fr_auto] lg:items-center"
+                    >
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                          Nome
+                        </span>
+                        <strong className="mt-1 block text-white">{participant.name}</strong>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                          Apelido
+                        </span>
+                        <span className="mt-1 block text-zinc-300">
+                          {participant.nickname ?? '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                          Time
+                        </span>
+                        <span className="mt-1 block text-zinc-300">
+                          {participant.teamName ?? '-'}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => void handleApprove(participant.id)}
+                          disabled={pendingAction !== null}
+                          className="rounded-lg bg-gold-500 px-3 py-2 text-xs font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isApproving ? 'Aprovando...' : 'Aprovar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleReject(participant.id)}
+                          disabled={pendingAction !== null}
+                          className="rounded-lg border border-red-500/30 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isRejecting ? 'Rejeitando...' : 'Rejeitar'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
       ) : null}
 
       <div className="mt-6">

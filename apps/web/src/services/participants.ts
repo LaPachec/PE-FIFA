@@ -1,6 +1,6 @@
 import { authenticatedRequest } from '@/services/api-client';
 
-export type ParticipantStatus = 'ACTIVE' | 'ELIMINATED' | 'CHAMPION';
+export type ParticipantStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'ELIMINATED' | 'CHAMPION';
 
 export type Participant = {
   id: string;
@@ -25,6 +25,12 @@ export function getParticipants(tournamentId: string) {
   return authenticatedRequest<Participant[]>(`/tournaments/${tournamentId}/participants`);
 }
 
+export function getPendingParticipants(tournamentId: string) {
+  return authenticatedRequest<Participant[]>(
+    `/tournaments/${tournamentId}/participants/pending`,
+  );
+}
+
 export function createParticipant(
   tournamentId: string,
   payload: CreateParticipantPayload,
@@ -45,5 +51,17 @@ export function updateParticipant(id: string, payload: UpdateParticipantPayload)
 export function deleteParticipant(id: string) {
   return authenticatedRequest<void>(`/participants/${id}`, {
     method: 'DELETE',
+  });
+}
+
+export function approveParticipant(id: string) {
+  return authenticatedRequest<Participant>(`/participants/${id}/approve`, {
+    method: 'PATCH',
+  });
+}
+
+export function rejectParticipant(id: string) {
+  return authenticatedRequest<Participant>(`/participants/${id}/reject`, {
+    method: 'PATCH',
   });
 }

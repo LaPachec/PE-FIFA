@@ -74,17 +74,12 @@ export default function JoinTournamentPage() {
         teamName: teamName.trim() || null,
       });
 
-      setSuccessMessage('Inscricao realizada com sucesso!');
+      setSuccessMessage(
+        'Inscricao enviada com sucesso! Aguarde a aprovacao do organizador.',
+      );
       setName('');
       setNickname('');
       setTeamName('');
-
-      if (invite) {
-        setInvite({
-          ...invite,
-          totalParticipants: invite.totalParticipants + 1,
-        });
-      }
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Nao foi possivel realizar a inscricao.',

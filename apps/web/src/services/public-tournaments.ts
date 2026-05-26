@@ -30,6 +30,11 @@ export type JoinTournamentPayload = {
   teamName?: string | null;
 };
 
+export type JoinTournamentResponse = {
+  message: string;
+  participant: Participant;
+};
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
 
 export async function getPublicTournamentBySlug(slug: string) {
@@ -89,5 +94,5 @@ export async function joinTournamentByInvite(
     throw new Error(error?.message ?? 'Nao foi possivel realizar a inscricao');
   }
 
-  return response.json() as Promise<Participant>;
+  return response.json() as Promise<JoinTournamentResponse>;
 }
