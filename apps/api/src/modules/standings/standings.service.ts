@@ -150,6 +150,9 @@ export const standingsService = {
       where: { id: tournamentId },
       include: {
         participants: {
+          where: {
+            status: { in: ['ACTIVE', 'CHAMPION'] },
+          },
           orderBy: { name: 'asc' },
         },
         matches: {

@@ -49,9 +49,20 @@ Um participante pertence a um campeonato e pode representar um jogador, apelido 
 
 Status planejados:
 
+- `PENDING`
 - `ACTIVE`
+- `REJECTED`
 - `ELIMINATED`
 - `CHAMPION`
+
+Regras:
+
+1. Participantes criados manualmente pelo dono do campeonato entram como `ACTIVE`.
+2. Participantes inscritos por convite publico entram como `PENDING`.
+3. Participantes rejeitados ficam com `REJECTED`.
+4. A listagem padrao de participantes do campeonato retorna apenas `ACTIVE`.
+5. A listagem de pendentes retorna apenas `PENDING`.
+6. Somente participantes `ACTIVE` entram na geracao de partidas.
 
 ## Partidas
 
@@ -74,8 +85,8 @@ Regras:
 
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
-3. O campeonato precisa ter pelo menos 3 participantes.
-4. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
+3. O campeonato precisa ter pelo menos 3 participantes ativos.
+4. Ao iniciar, o sistema gera partidas para todos os pares de participantes ativos.
 5. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
 6. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
 7. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
@@ -89,11 +100,11 @@ Regras:
 
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
-3. O campeonato precisa ter pelo menos 3 participantes.
+3. O campeonato precisa ter pelo menos 3 participantes ativos.
 4. `qualifiedCount` e obrigatorio.
 5. `qualifiedCount` deve ser `2`, `4`, `8` ou `16`.
 6. `qualifiedCount` nao pode ser maior que o numero de participantes.
-7. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
+7. Ao iniciar, o sistema gera partidas para todos os pares de participantes ativos.
 8. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
 9. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
 10. A fase mata-mata nao e gerada nesta etapa.
@@ -140,7 +151,7 @@ Regras:
 
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
-3. O campeonato precisa ter exatamente 4, 8 ou 16 participantes.
+3. O campeonato precisa ter exatamente 4, 8 ou 16 participantes ativos.
 4. A ordem de cadastro dos participantes define os confrontos.
 5. O pareamento usa o primeiro contra o ultimo, o segundo contra o penultimo, e assim por diante.
 6. Com 4 participantes, a fase gerada e `SEMI_FINAL`.
@@ -279,8 +290,14 @@ Regras:
 8. `teamName` e opcional.
 9. Nao pode existir participante com o mesmo `name` dentro do campeonato.
 10. Nao pode existir participante com o mesmo `nickname` dentro do campeonato quando `nickname` for informado.
-11. Participantes inscritos por convite entram com `status = ACTIVE`.
-12. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
+11. Participantes inscritos por convite entram com `status = PENDING`.
+12. Participantes `PENDING` precisam ser aprovados pelo dono antes de entrar no campeonato.
+13. Aprovacao e rejeicao so podem acontecer enquanto o campeonato esta em `DRAFT`.
+14. Apenas o dono do campeonato pode aprovar ou rejeitar inscricoes.
+15. Ao aprovar, o participante passa para `ACTIVE`.
+16. Ao rejeitar, o participante passa para `REJECTED`.
+17. Neste MVP, e permitido iniciar um campeonato com inscricoes `PENDING`; elas sao ignoradas e apenas participantes `ACTIVE` entram na geracao de partidas.
+18. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
 
 ## Decisoes pendentes
 

@@ -291,6 +291,7 @@ export const tournamentsService = {
         where: { id, ownerId },
         include: {
           participants: {
+            where: { status: 'ACTIVE' },
             select: { id: true },
             orderBy: { createdAt: 'asc' },
           },
@@ -363,6 +364,9 @@ export const tournamentsService = {
         where: { id, ownerId },
         include: {
           participants: {
+            where: {
+              status: { in: ['ACTIVE', 'CHAMPION'] },
+            },
             orderBy: { name: 'asc' },
           },
           matches: true,
@@ -425,6 +429,7 @@ export const tournamentsService = {
         where: { id, ownerId },
         include: {
           participants: {
+            where: { status: 'ACTIVE' },
             orderBy: { name: 'asc' },
           },
           matches: true,

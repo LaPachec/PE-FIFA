@@ -21,7 +21,9 @@ enum TournamentStatus {
 }
 
 enum ParticipantStatus {
+  PENDING
   ACTIVE
+  REJECTED
   ELIMINATED
   CHAMPION
 }

@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "ParticipantStatus" ADD VALUE 'PENDING' BEFORE 'ACTIVE';
+ALTER TYPE "ParticipantStatus" ADD VALUE 'REJECTED' AFTER 'ACTIVE';

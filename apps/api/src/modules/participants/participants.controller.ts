@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../../shared/errors/app-error.js';
+import { getAuthenticatedUserId } from '../../shared/middlewares/require-auth.js';
 import {
   createParticipantSchema,
   updateParticipantSchema,
@@ -49,6 +50,15 @@ export const participantsController = {
     response.status(200).json(participants);
   },
 
+  async listPendingByTournament(request: Request, response: Response) {
+    const participants = await participantsService.listPendingByTournament(
+      getParam(request, 'tournamentId'),
+      getAuthenticatedUserId(request),
+    );
+
+    response.status(200).json(participants);
+  },
+
   async findById(request: Request, response: Response) {
     const participant = await participantsService.findById(getParam(request, 'id'));
 
@@ -70,5 +80,23 @@ export const participantsController = {
     await participantsService.delete(getParam(request, 'id'));
 
     response.status(204).send();
+  },
+
+  async approve(request: Request, response: Response) {
+    const participant = await participantsService.approve(
+      getParam(request, 'id'),
+      getAuthenticatedUserId(request),
+    );
+
+    response.status(200).json(participant);
+  },
+
+  async reject(request: Request, response: Response) {
+    const participant = await participantsService.reject(
+      getParam(request, 'id'),
+      getAuthenticatedUserId(request),
+    );
+
+    response.status(200).json(participant);
   },
 };

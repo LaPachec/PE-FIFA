@@ -22,6 +22,9 @@ export const publicTournamentsService = {
         createdAt: true,
         updatedAt: true,
         participants: {
+          where: {
+            status: { in: ['ACTIVE', 'CHAMPION'] },
+          },
           orderBy: { name: 'asc' },
           select: {
             id: true,
@@ -96,7 +99,11 @@ export const publicTournamentsService = {
         format: true,
         status: true,
         _count: {
-          select: { participants: true },
+          select: {
+            participants: {
+              where: { status: 'ACTIVE' },
+            },
+          },
         },
       },
     });
@@ -127,6 +134,6 @@ export const publicTournamentsService = {
       throw new AppError('Tournament not found', 404);
     }
 
-    return participantsService.create(tournament.id, input);
+    return participantsService.createPending(tournament.id, input);
   },
 };

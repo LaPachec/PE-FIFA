@@ -160,7 +160,24 @@ Regras:
 - `teamName` e opcional.
 - Nao permite dois participantes com o mesmo `name` no mesmo campeonato.
 - Nao permite dois participantes com o mesmo `nickname` no mesmo campeonato quando `nickname` for informado.
-- O participante criado recebe `status = ACTIVE`.
+- O participante criado recebe `status = PENDING`.
+- A resposta informa que a inscricao aguarda aprovacao do criador.
+
+Resposta:
+
+```json
+{
+  "message": "Registration received and is awaiting approval",
+  "participant": {
+    "id": "participant-id",
+    "tournamentId": "tournament-id",
+    "name": "Lucas",
+    "nickname": "Lukinhas",
+    "teamName": "Real Madrid",
+    "status": "PENDING"
+  }
+}
+```
 
 ## Dashboard
 
@@ -385,11 +402,30 @@ Resposta:
 
 ### GET /tournaments/:tournamentId/participants
 
-Lista participantes de um campeonato.
+Lista participantes ativos de um campeonato.
 
 Regras:
 
 - Retorna `404` se o campeonato nao existir.
+- Retorna apenas participantes com `status = ACTIVE`.
+
+### GET /tournaments/:tournamentId/participants/pending
+
+Lista inscricoes publicas pendentes de aprovacao em um campeonato.
+
+Headers:
+
+```http
+Authorization: Bearer <token>
+```
+
+Regras:
+
+- Exige usuario autenticado.
+- Apenas o dono do campeonato pode listar pendentes.
+- Retorna `404` se o campeonato nao existir.
+- Retorna `403` se o campeonato nao pertencer ao usuario autenticado.
+- Retorna apenas participantes com `status = PENDING`.
 
 ### POST /tournaments/:tournamentId/participants
 
@@ -454,6 +490,46 @@ Regras:
 
 - Retorna `404` se o participante nao existir.
 - Retorna `409` se o campeonato do participante nao estiver em `DRAFT`.
+
+### PATCH /participants/:id/approve
+
+Aprova uma inscricao publica pendente.
+
+Headers:
+
+```http
+Authorization: Bearer <token>
+```
+
+Regras:
+
+- Exige usuario autenticado.
+- Apenas o dono do campeonato pode aprovar.
+- Retorna `404` se o participante nao existir.
+- Retorna `403` se o participante pertencer a campeonato de outro usuario.
+- Retorna `409` se o campeonato nao estiver em `DRAFT`.
+- Retorna `409` se o participante nao estiver com `status = PENDING`.
+- Ao aprovar, altera o status para `ACTIVE`.
+
+### PATCH /participants/:id/reject
+
+Rejeita uma inscricao publica pendente.
+
+Headers:
+
+```http
+Authorization: Bearer <token>
+```
+
+Regras:
+
+- Exige usuario autenticado.
+- Apenas o dono do campeonato pode rejeitar.
+- Retorna `404` se o participante nao existir.
+- Retorna `403` se o participante pertencer a campeonato de outro usuario.
+- Retorna `409` se o campeonato nao estiver em `DRAFT`.
+- Retorna `409` se o participante nao estiver com `status = PENDING`.
+- Ao rejeitar, altera o status para `REJECTED`.
 
 ## Rotas planejadas
 

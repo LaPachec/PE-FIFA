@@ -9,8 +9,14 @@ tournamentParticipantsRouter.get(
   '/',
   asyncHandler(participantsController.listByTournament),
 );
+tournamentParticipantsRouter.get(
+  '/pending',
+  asyncHandler(participantsController.listPendingByTournament),
+);
 tournamentParticipantsRouter.post('/', asyncHandler(participantsController.create));
 
+participantsRouter.patch('/:id/approve', asyncHandler(participantsController.approve));
+participantsRouter.patch('/:id/reject', asyncHandler(participantsController.reject));
 participantsRouter.get('/:id', asyncHandler(participantsController.findById));
 participantsRouter.patch('/:id', asyncHandler(participantsController.update));
 participantsRouter.delete('/:id', asyncHandler(participantsController.delete));
