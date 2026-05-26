@@ -157,6 +157,45 @@ Resposta:
 }
 ```
 
+### POST /tournaments/:id/generate-knockout-stage
+
+Gera a primeira fase mata-mata de um campeonato `LEAGUE_KNOCKOUT` usando os melhores classificados da fase de liga.
+
+Regras:
+
+- Retorna `404` se o campeonato nao existir.
+- Retorna `400` se o campeonato nao for do formato `LEAGUE_KNOCKOUT`.
+- Retorna `409` se o campeonato nao estiver em `IN_PROGRESS`.
+- Retorna `409` se existir partida da fase `LEAGUE` pendente.
+- Retorna `400` se `qualifiedCount` nao estiver configurado como `2`, `4`, `8` ou `16`.
+- Retorna `400` se `qualifiedCount` for maior que o numero de participantes.
+- Retorna `409` se ja existir qualquer partida com fase diferente de `LEAGUE`.
+- Calcula a classificacao com os mesmos criterios de `GET /tournaments/:id/standings`.
+- Seleciona os primeiros `qualifiedCount` participantes da classificacao.
+- Gera a primeira fase eliminatoria e altera o campeonato para `KNOCKOUT_STAGE`.
+- A geracao das partidas e a alteracao de status acontecem em uma transaction.
+
+Fases geradas:
+
+- 2 classificados: `FINAL`.
+- 4 classificados: `SEMI_FINAL`.
+- 8 classificados: `QUARTER_FINAL`.
+- 16 classificados: `ROUND_OF_16`.
+
+Pareamento:
+
+- Usa seed por classificacao: 1o contra ultimo classificado, 2o contra penultimo, e assim por diante.
+
+Resposta:
+
+```json
+{
+  "id": "tournament-id",
+  "status": "KNOCKOUT_STAGE",
+  "matches": []
+}
+```
+
 ## Participantes
 
 ### GET /tournaments/:tournamentId/participants
@@ -275,6 +314,7 @@ Validacoes e regras:
 - Retorna `404` se a partida nao existir.
 - Retorna `404` se o campeonato da partida nao existir.
 - Retorna `409` se o campeonato nao estiver em `IN_PROGRESS`.
+- Para partidas eliminatorias de `LEAGUE_KNOCKOUT`, tambem aceita campeonato em `KNOCKOUT_STAGE`.
 - Partidas com `phase = LEAGUE` permitem empate.
 - Partidas eliminatorias nao permitem empate.
 - Em partidas eliminatorias, o vencedor e definido automaticamente pelo maior placar.

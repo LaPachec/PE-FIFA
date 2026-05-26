@@ -231,6 +231,7 @@ export const matchesService = {
           tournament: {
             select: {
               id: true,
+              format: true,
               status: true,
             },
           },
@@ -245,7 +246,13 @@ export const matchesService = {
         throw new AppError('Tournament not found', 404);
       }
 
-      if (match.tournament.status !== 'IN_PROGRESS') {
+      const canUpdateResult =
+        match.tournament.status === 'IN_PROGRESS' ||
+        (match.tournament.format === 'LEAGUE_KNOCKOUT' &&
+          match.tournament.status === 'KNOCKOUT_STAGE' &&
+          isKnockoutPhase(match.phase));
+
+      if (!canUpdateResult) {
         throw new AppError('Tournament must be in progress to update match results', 409);
       }
 

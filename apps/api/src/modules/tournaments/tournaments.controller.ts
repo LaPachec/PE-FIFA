@@ -78,4 +78,12 @@ export const tournamentsController = {
 
     response.status(200).json(tournament);
   },
+
+  async generateKnockoutStage(request: Request, response: Response) {
+    const tournament = await tournamentsService.generateKnockoutStage(
+      getTournamentId(request),
+    );
+
+    response.status(200).json(tournament);
+  },
 };

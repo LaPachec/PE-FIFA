@@ -72,6 +72,38 @@ Regras:
 11. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
 12. O campeonato nao pode ser iniciado duas vezes.
 
+## Geracao da fase mata-mata em liga + mata-mata
+
+Campeonatos `LEAGUE_KNOCKOUT` geram a fase final apenas depois que a fase de liga termina.
+
+Regras:
+
+1. O campeonato precisa existir.
+2. O campeonato precisa ser do formato `LEAGUE_KNOCKOUT`.
+3. O campeonato precisa estar com status `IN_PROGRESS`.
+4. Todas as partidas da fase `LEAGUE` precisam estar com status `FINISHED`.
+5. `qualifiedCount` precisa estar configurado como `2`, `4`, `8` ou `16`.
+6. `qualifiedCount` nao pode ser maior que o numero de participantes.
+7. A classificacao da liga define os classificados.
+8. O sistema seleciona os primeiros `qualifiedCount` participantes da classificacao.
+9. Nao e permitido gerar a fase mata-mata se ja existir qualquer partida fora da fase `LEAGUE`.
+10. Ao gerar, o campeonato muda para `KNOCKOUT_STAGE`.
+11. A geracao das partidas e a troca de status acontecem na mesma transaction.
+12. A fase mata-mata usa a mesma progressao automatica do formato `KNOCKOUT`.
+
+Fases geradas:
+
+1. 2 classificados geram `FINAL`.
+2. 4 classificados geram `SEMI_FINAL`.
+3. 8 classificados geram `QUARTER_FINAL`.
+4. 16 classificados geram `ROUND_OF_16`.
+
+Pareamento:
+
+1. O primeiro colocado enfrenta o ultimo classificado.
+2. O segundo colocado enfrenta o penultimo classificado.
+3. A regra continua ate formar todos os confrontos da fase.
+
 ## Inicio de campeonatos mata-mata
 
 Nesta etapa, campeonatos com formato `KNOCKOUT` podem gerar automaticamente apenas a primeira fase eliminatoria.
@@ -118,7 +150,7 @@ Regras:
 
 1. A partida precisa existir.
 2. O campeonato da partida precisa existir.
-3. O campeonato precisa estar com status `IN_PROGRESS`.
+3. O campeonato precisa estar com status `IN_PROGRESS` ou, para `LEAGUE_KNOCKOUT`, `KNOCKOUT_STAGE`.
 4. O placar do mandante e do visitante e obrigatorio.
 5. Placar deve ser um numero inteiro maior ou igual a zero.
 6. Empates nao sao permitidos.

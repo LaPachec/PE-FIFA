@@ -146,6 +146,26 @@ function getKnockoutPhase(participantsCount: number): MatchPhase {
   throw new AppError('KNOCKOUT tournaments must have exactly 4, 8 or 16 participants', 400);
 }
 
+function getLeagueKnockoutPhase(qualifiedCount: number): MatchPhase {
+  if (qualifiedCount === 2) {
+    return 'FINAL';
+  }
+
+  if (qualifiedCount === 4) {
+    return 'SEMI_FINAL';
+  }
+
+  if (qualifiedCount === 8) {
+    return 'QUARTER_FINAL';
+  }
+
+  if (qualifiedCount === 16) {
+    return 'ROUND_OF_16';
+  }
+
+  throw new AppError('qualifiedCount must be 2, 4, 8 or 16', 400);
+}
+
 function createKnockoutFirstRoundMatches(
   tournamentId: string,
   participants: MatchParticipant[],
@@ -166,6 +186,42 @@ function createKnockoutFirstRoundMatches(
       tournamentId,
       phase,
       round: 1,
+      homeParticipantId: homeParticipant.id,
+      awayParticipantId: awayParticipant.id,
+      status: 'PENDING',
+      matchOrder,
+    });
+  }
+
+  return matchesToCreate;
+}
+
+function createLeagueKnockoutStageMatches(
+  tournamentId: string,
+  participants: MatchParticipant[],
+  qualifiedCount: number,
+  round: number,
+) {
+  const phase = getLeagueKnockoutPhase(qualifiedCount);
+  const matchesToCreate: GeneratedMatch[] = [];
+
+  for (let index = 0; index < participants.length / 2; index += 1) {
+    const homeParticipant = participants[index];
+    const awayParticipant = participants[participants.length - 1 - index];
+    const matchOrder = index + 1;
+
+    if (!homeParticipant || !awayParticipant) {
+      throw new AppError('Cannot generate knockout stage without all qualified participants', 409);
+    }
+
+    if (homeParticipant.id === awayParticipant.id) {
+      throw new AppError('Cannot create a match with the same participant twice', 400);
+    }
+
+    matchesToCreate.push({
+      tournamentId,
+      phase,
+      round,
       homeParticipantId: homeParticipant.id,
       awayParticipantId: awayParticipant.id,
       status: 'PENDING',
@@ -380,6 +436,97 @@ export const tournamentsService = {
         data: {
           status: 'FINISHED',
           championParticipantId: champion.participantId,
+        },
+      });
+    });
+  },
+
+  async generateKnockoutStage(id: string) {
+    return prisma.$transaction(async (transaction) => {
+      const tournament = await transaction.tournament.findUnique({
+        where: { id },
+        include: {
+          participants: {
+            orderBy: { name: 'asc' },
+          },
+          matches: true,
+        },
+      });
+
+      if (!tournament) {
+        throw new AppError('Tournament not found', 404);
+      }
+
+      if (tournament.format !== 'LEAGUE_KNOCKOUT') {
+        throw new AppError('Only LEAGUE_KNOCKOUT tournaments can generate a knockout stage', 400);
+      }
+
+      if (tournament.status !== 'IN_PROGRESS') {
+        throw new AppError('Tournament must be in progress to generate a knockout stage', 409);
+      }
+
+      assertLeagueKnockoutStartRules(
+        tournament.qualifiedCount,
+        tournament.participants.length,
+      );
+
+      const qualifiedCount = tournament.qualifiedCount;
+
+      if (!qualifiedCount) {
+        throw new AppError('qualifiedCount is required for LEAGUE_KNOCKOUT tournaments', 400);
+      }
+
+      const leagueMatches = tournament.matches.filter((match) => match.phase === 'LEAGUE');
+
+      if (leagueMatches.length === 0) {
+        throw new AppError('Tournament must have league matches before knockout stage', 400);
+      }
+
+      const hasPendingLeagueMatches = leagueMatches.some(
+        (match) => match.status === 'PENDING',
+      );
+
+      if (hasPendingLeagueMatches) {
+        throw new AppError('All league matches must be finished before knockout stage', 409);
+      }
+
+      const hasKnockoutMatches = tournament.matches.some(
+        (match) => match.phase !== 'LEAGUE',
+      );
+
+      if (hasKnockoutMatches) {
+        throw new AppError('Tournament already has knockout stage matches', 409);
+      }
+
+      const standings = calculateLeagueStandings(tournament.participants, leagueMatches);
+      const qualifiedParticipants = standings
+        .slice(0, qualifiedCount)
+        .map((standing) => ({ id: standing.participantId }));
+
+      if (qualifiedParticipants.length !== qualifiedCount) {
+        throw new AppError('Not enough participants qualified for knockout stage', 400);
+      }
+
+      const nextRound =
+        Math.max(...leagueMatches.map((match) => match.round ?? 0), 0) + 1;
+      const matchesToCreate = createLeagueKnockoutStageMatches(
+        id,
+        qualifiedParticipants,
+        qualifiedCount,
+        nextRound,
+      );
+
+      await transaction.match.createMany({
+        data: matchesToCreate,
+      });
+
+      return transaction.tournament.update({
+        where: { id },
+        data: { status: 'KNOCKOUT_STAGE' },
+        include: {
+          matches: {
+            orderBy: [{ round: 'asc' }, { matchOrder: 'asc' }],
+          },
         },
       });
     });

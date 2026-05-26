@@ -14,6 +14,10 @@ tournamentsRouter.use('/:tournamentId/matches', tournamentMatchesRouter);
 tournamentsRouter.use('/:tournamentId/standings', tournamentStandingsRouter);
 tournamentsRouter.post('/:id/start', asyncHandler(tournamentsController.start));
 tournamentsRouter.post('/:id/finish', asyncHandler(tournamentsController.finish));
+tournamentsRouter.post(
+  '/:id/generate-knockout-stage',
+  asyncHandler(tournamentsController.generateKnockoutStage),
+);
 tournamentsRouter.get('/:id', asyncHandler(tournamentsController.findById));
 tournamentsRouter.patch('/:id', asyncHandler(tournamentsController.update));
 tournamentsRouter.delete('/:id', asyncHandler(tournamentsController.delete));
