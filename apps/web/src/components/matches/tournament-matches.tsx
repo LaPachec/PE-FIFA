@@ -14,6 +14,7 @@ import {
   type Tournament,
   type TournamentStatus,
 } from '@/services/tournaments';
+import { SectionShell } from '@/components/tournaments/tournament-visuals';
 
 type TournamentMatchesProps = {
   tournamentId: string;
@@ -260,22 +261,17 @@ export function TournamentMatches({
   }
 
   return (
-    <section className="mt-10 border-t border-white/10 pt-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Partidas</h2>
-          <p className="mt-1 text-sm text-slate-300">
-            Inicie o campeonato para gerar a tabela de jogos da liga.
-          </p>
-        </div>
-
+    <SectionShell
+      title="Partidas"
+      description="Inicie o campeonato para gerar a tabela de jogos da liga."
+      action={
         <div className="flex flex-wrap gap-2">
           {currentStatus === 'DRAFT' ? (
             <button
               type="button"
               onClick={() => void handleStartTournament()}
               disabled={!canStartTournament}
-              className="rounded-md bg-lime-400 px-4 py-2 text-sm font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-gold-500 px-4 py-2 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isStarting ? 'Iniciando...' : 'Iniciar campeonato'}
             </button>
@@ -286,7 +282,7 @@ export function TournamentMatches({
               type="button"
               onClick={() => void handleFinishTournament()}
               disabled={!canFinishTournament}
-              className="rounded-md bg-lime-400 px-4 py-2 text-sm font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-gold-500 px-4 py-2 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isFinishing ? 'Finalizando...' : 'Finalizar campeonato'}
             </button>
@@ -296,25 +292,26 @@ export function TournamentMatches({
             type="button"
             onClick={() => void loadMatches()}
             disabled={isLoading || isStarting || isFinishing}
-            className="rounded-md border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-arena-700 px-4 py-2 text-sm font-semibold text-white transition hover:border-gold-500 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Atualizar
           </button>
         </div>
-      </div>
+      }
+    >
 
       {currentStatus === 'IN_PROGRESS' && hasPendingMatches ? (
-        <div className="mt-5 rounded-md border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+        <div className="rounded-xl border border-gold-700/40 bg-gold-700/10 px-4 py-3 text-sm text-gold-400">
           Finalize todas as partidas antes de encerrar o campeonato.
         </div>
       ) : null}
 
       {feedback ? (
         <div
-          className={`mt-5 rounded-md border px-4 py-3 text-sm ${
+          className={`mt-5 rounded-xl border px-4 py-3 text-sm ${
             feedback.type === 'success'
-              ? 'border-lime-300/30 bg-lime-400/10 text-lime-100'
-              : 'border-red-400/30 bg-red-500/10 text-red-100'
+              ? 'border-gold-500/30 bg-gold-500/10 text-gold-400'
+              : 'border-red-500/30 bg-red-500/10 text-red-100'
           }`}
         >
           {feedback.message}
@@ -323,11 +320,11 @@ export function TournamentMatches({
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="rounded-md border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
+          <div className="rounded-xl border border-arena-700 bg-arena-850 p-6 text-sm text-zinc-400">
             Carregando partidas...
           </div>
         ) : matches.length === 0 ? (
-          <div className="rounded-md border border-dashed border-white/15 p-8 text-center text-sm text-slate-300">
+          <div className="rounded-xl border border-dashed border-arena-700 p-8 text-center text-sm text-zinc-400">
             Nenhuma partida gerada ainda.
           </div>
         ) : (
@@ -340,11 +337,11 @@ export function TournamentMatches({
               return (
                 <div
                   key={match.id}
-                  className="rounded-md border border-white/10 bg-white/5 p-4"
+                  className="rounded-xl border border-arena-700 bg-arena-850 p-4"
                 >
                   <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr_1.3fr_0.8fr_0.7fr_0.8fr_auto] lg:items-center">
                     <div>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                         Mandante
                       </span>
                       <strong className="mt-1 block text-white">
@@ -352,13 +349,13 @@ export function TournamentMatches({
                       </strong>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                         Placar
                       </span>
                       <strong className="mt-1 block text-white">{getScoreLabel(match)}</strong>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                         Visitante
                       </span>
                       <strong className="mt-1 block text-white">
@@ -366,26 +363,26 @@ export function TournamentMatches({
                       </strong>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                         Fase
                       </span>
-                      <span className="mt-1 block text-slate-200">
+                      <span className="mt-1 block text-zinc-300">
                         {phaseLabels[match.phase]}
                       </span>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                         Rodada
                       </span>
-                      <span className="mt-1 block text-slate-200">
+                      <span className="mt-1 block text-zinc-300">
                         {match.round ?? '-'}
                       </span>
                     </div>
                     <div>
-                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                         Status
                       </span>
-                      <span className="mt-1 inline-flex rounded-md border border-white/10 px-2 py-1 text-xs font-bold text-slate-100">
+                      <span className="mt-1 inline-flex rounded-full border border-arena-700 px-2 py-1 text-xs font-bold text-zinc-100">
                         {statusLabels[match.status]}
                       </span>
                     </div>
@@ -395,12 +392,12 @@ export function TournamentMatches({
                           type="button"
                           onClick={() => startResultEditing(match)}
                           disabled={isSavingResult}
-                          className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-lg border border-arena-700 px-3 py-2 text-xs font-bold text-white transition hover:border-gold-500 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {resultActionLabel}
                         </button>
                       ) : (
-                        <span className="text-xs text-slate-500">Encerrado</span>
+                        <span className="text-xs text-zinc-500">Encerrado</span>
                       )}
                     </div>
                   </div>
@@ -408,7 +405,7 @@ export function TournamentMatches({
                   {isEditingResult ? (
                     <form
                       onSubmit={(event) => void handleSaveResult(event, match.id)}
-                      className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-[1fr_1fr_auto]"
+                      className="mt-4 grid gap-3 border-t border-arena-700 pt-4 sm:grid-cols-[1fr_1fr_auto]"
                     >
                       <input
                         type="number"
@@ -422,7 +419,7 @@ export function TournamentMatches({
                             homeScore: event.target.value,
                           }))
                         }
-                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
                         placeholder="Gols do mandante"
                         required
                       />
@@ -438,7 +435,7 @@ export function TournamentMatches({
                             awayScore: event.target.value,
                           }))
                         }
-                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
                         placeholder="Gols do visitante"
                         required
                       />
@@ -446,7 +443,7 @@ export function TournamentMatches({
                         <button
                           type="submit"
                           disabled={savingResultMatchId === match.id}
-                          className="rounded-md bg-lime-400 px-4 py-2 text-xs font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-lg bg-gold-500 px-4 py-2 text-xs font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {savingResultMatchId === match.id ? 'Salvando...' : 'Salvar'}
                         </button>
@@ -454,7 +451,7 @@ export function TournamentMatches({
                           type="button"
                           onClick={cancelResultEditing}
                           disabled={savingResultMatchId === match.id}
-                          className="rounded-md border border-white/15 px-4 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-lg border border-arena-700 px-4 py-2 text-xs font-bold text-white transition hover:border-gold-500 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Cancelar
                         </button>
@@ -467,6 +464,6 @@ export function TournamentMatches({
           </div>
         )}
       </div>
-    </section>
+    </SectionShell>
   );
 }

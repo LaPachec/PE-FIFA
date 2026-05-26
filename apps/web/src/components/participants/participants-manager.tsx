@@ -8,6 +8,7 @@ import {
   updateParticipant,
   type Participant,
 } from '@/services/participants';
+import { SectionShell } from '@/components/tournaments/tournament-visuals';
 
 type ParticipantsManagerProps = {
   tournamentId: string;
@@ -157,36 +158,33 @@ export function ParticipantsManager({
   }
 
   return (
-    <section className="mt-10 border-t border-white/10 pt-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Participantes</h2>
-          <p className="mt-1 text-sm text-slate-300">
-            Gerencie os jogadores inscritos neste campeonato.
-          </p>
-        </div>
+    <SectionShell
+      title="Participantes"
+      description="Gerencie os jogadores inscritos neste campeonato."
+      action={
         <button
           type="button"
           onClick={() => void loadParticipants()}
-          className="rounded-md border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-lime-300 hover:text-lime-200"
+          className="rounded-xl border border-arena-700 px-4 py-2 text-sm font-semibold text-white transition hover:border-gold-500 hover:text-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-500/40"
         >
           Atualizar
         </button>
-      </div>
+      }
+    >
 
       {!canManageParticipants ? (
-        <div className="mt-5 rounded-md border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+        <div className="rounded-xl border border-gold-700/40 bg-gold-700/10 px-4 py-3 text-sm text-gold-400">
           Este campeonato ja foi iniciado. Os participantes nao podem mais ser alterados.
         </div>
       ) : (
         <form
           onSubmit={handleCreate}
-          className="mt-6 grid gap-4 rounded-md border border-white/10 bg-white/5 p-5 lg:grid-cols-[1fr_1fr_1fr_auto]"
+          className="grid gap-4 rounded-xl border border-arena-700 bg-arena-850 p-5 lg:grid-cols-[1fr_1fr_1fr_auto]"
         >
           <input
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            className="rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-lime-300"
+            className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
             placeholder="Nome"
             required
           />
@@ -195,7 +193,7 @@ export function ParticipantsManager({
             onChange={(event) =>
               setForm((current) => ({ ...current, nickname: event.target.value }))
             }
-            className="rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-lime-300"
+            className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
             placeholder="Apelido"
           />
           <input
@@ -203,13 +201,13 @@ export function ParticipantsManager({
             onChange={(event) =>
               setForm((current) => ({ ...current, teamName: event.target.value }))
             }
-            className="rounded-md border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-lime-300"
+            className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
             placeholder="Time"
           />
           <button
             type="submit"
             disabled={!canSubmit}
-            className="rounded-md bg-lime-400 px-5 py-3 text-sm font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-gold-500 px-5 py-3 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Adicionar
           </button>
@@ -220,8 +218,8 @@ export function ParticipantsManager({
         <div
           className={`mt-5 rounded-md border px-4 py-3 text-sm ${
             feedback.type === 'success'
-              ? 'border-lime-300/30 bg-lime-400/10 text-lime-100'
-              : 'border-red-400/30 bg-red-500/10 text-red-100'
+              ? 'border-gold-500/30 bg-gold-500/10 text-gold-400'
+              : 'border-red-500/30 bg-red-500/10 text-red-100'
           }`}
         >
           {feedback.message}
@@ -230,11 +228,11 @@ export function ParticipantsManager({
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="rounded-md border border-white/10 bg-white/5 p-6 text-sm text-slate-300">
+          <div className="rounded-xl border border-arena-700 bg-arena-850 p-6 text-sm text-zinc-400">
             Carregando participantes...
           </div>
         ) : participants.length === 0 ? (
-          <div className="rounded-md border border-dashed border-white/15 p-8 text-center text-sm text-slate-300">
+          <div className="rounded-xl border border-dashed border-arena-700 p-8 text-center text-sm text-zinc-400">
             Nenhum participante cadastrado ainda.
           </div>
         ) : (
@@ -245,7 +243,7 @@ export function ParticipantsManager({
               return (
                 <div
                   key={participant.id}
-                  className="rounded-md border border-white/10 bg-white/5 p-4"
+                  className="rounded-xl border border-arena-700 bg-arena-850 p-4"
                 >
                   {isEditing ? (
                     <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
@@ -257,7 +255,7 @@ export function ParticipantsManager({
                             name: event.target.value,
                           }))
                         }
-                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
                         placeholder="Nome"
                       />
                       <input
@@ -268,7 +266,7 @@ export function ParticipantsManager({
                             nickname: event.target.value,
                           }))
                         }
-                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
                         placeholder="Apelido"
                       />
                       <input
@@ -279,7 +277,7 @@ export function ParticipantsManager({
                             teamName: event.target.value,
                           }))
                         }
-                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
                         placeholder="Time"
                       />
                       <div className="flex justify-end gap-2">
@@ -287,14 +285,14 @@ export function ParticipantsManager({
                           type="button"
                           onClick={() => void handleUpdate(participant.id)}
                           disabled={isSaving || editingForm.name.trim().length === 0}
-                          className="rounded-md bg-lime-400 px-3 py-2 text-xs font-bold text-pitch-950 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-lg bg-gold-500 px-3 py-2 text-xs font-bold text-arena-950 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Salvar
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingId(null)}
-                          className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white"
+                          className="rounded-lg border border-arena-700 px-3 py-2 text-xs font-bold text-white"
                         >
                           Cancelar
                         </button>
@@ -303,24 +301,24 @@ export function ParticipantsManager({
                   ) : (
                     <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_auto] lg:items-center">
                       <div>
-                        <span className="block text-xs font-semibold uppercase text-slate-500">
+                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                           Nome
                         </span>
                         <strong className="mt-1 block text-white">{participant.name}</strong>
                       </div>
                       <div>
-                        <span className="block text-xs font-semibold uppercase text-slate-500">
+                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                           Apelido
                         </span>
-                        <span className="mt-1 block text-slate-200">
+                        <span className="mt-1 block text-zinc-300">
                           {participant.nickname ?? '-'}
                         </span>
                       </div>
                       <div>
-                        <span className="block text-xs font-semibold uppercase text-slate-500">
+                        <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
                           Time
                         </span>
-                        <span className="mt-1 block text-slate-200">
+                        <span className="mt-1 block text-zinc-300">
                           {participant.teamName ?? '-'}
                         </span>
                       </div>
@@ -330,7 +328,7 @@ export function ParticipantsManager({
                             <button
                               type="button"
                               onClick={() => startEditing(participant)}
-                              className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200"
+                              className="rounded-lg border border-arena-700 px-3 py-2 text-xs font-bold text-white transition hover:border-gold-500 hover:text-gold-400"
                             >
                               Editar
                             </button>
@@ -338,13 +336,13 @@ export function ParticipantsManager({
                               type="button"
                               onClick={() => void handleDelete(participant.id)}
                               disabled={isSaving}
-                              className="rounded-md border border-red-400/30 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-lg border border-red-500/30 px-3 py-2 text-xs font-bold text-red-100 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Remover
                             </button>
                           </>
                         ) : (
-                          <span className="text-xs text-slate-500">Bloqueado</span>
+                          <span className="text-xs text-zinc-500">Bloqueado</span>
                         )}
                       </div>
                     </div>
@@ -355,6 +353,6 @@ export function ParticipantsManager({
           </div>
         )}
       </div>
-    </section>
+    </SectionShell>
   );
 }
