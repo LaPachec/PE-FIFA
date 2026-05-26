@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { dashboardRouter } from './modules/dashboard/dashboard.routes.js';
 import { matchesRouter } from './modules/matches/matches.routes.js';
 import { participantsRouter } from './modules/participants/participants.routes.js';
 import { publicRouter } from './modules/public/public.routes.js';
@@ -23,6 +24,7 @@ app.get('/health', (_request, response) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/dashboard', requireAuth, dashboardRouter);
 app.use('/tournaments', tournamentsRouter);
 app.use('/participants', requireAuth, participantsRouter);
 app.use('/matches', requireAuth, matchesRouter);

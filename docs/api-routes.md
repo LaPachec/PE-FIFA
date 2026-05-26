@@ -110,6 +110,67 @@ Resposta:
 }
 ```
 
+## Dashboard
+
+### GET /dashboard/summary
+
+Retorna um resumo dos campeonatos do usuario autenticado para uso no dashboard.
+
+Headers:
+
+```http
+Authorization: Bearer <token>
+```
+
+Regras:
+
+- Exige usuario autenticado.
+- Retorna apenas campeonatos do usuario logado.
+- Campeonatos sao ordenados por `updatedAt` descendente.
+- Nao retorna dados sensiveis do usuario.
+- Se o usuario nao tiver campeonatos, retorna contadores zerados e `tournaments` vazio.
+- `finishedMatches` e `pendingMatches` sao calculados com base nas partidas do campeonato.
+- `nextPendingMatch`, quando existir, usa a primeira partida pendente ordenada por `round` e `matchOrder`.
+
+Resposta:
+
+```json
+{
+  "stats": {
+    "totalTournaments": 5,
+    "draftTournaments": 1,
+    "inProgressTournaments": 2,
+    "knockoutStageTournaments": 1,
+    "finishedTournaments": 1
+  },
+  "tournaments": [
+    {
+      "id": "tournament-id",
+      "name": "Copa dos Amigos",
+      "slug": "copa-dos-amigos",
+      "description": "Campeonato local",
+      "format": "LEAGUE",
+      "status": "IN_PROGRESS",
+      "createdAt": "2026-05-25T00:00:00.000Z",
+      "updatedAt": "2026-05-25T00:00:00.000Z",
+      "champion": null,
+      "totalParticipants": 8,
+      "totalMatches": 28,
+      "finishedMatches": 12,
+      "pendingMatches": 16,
+      "publicPath": "/public/tournaments/copa-dos-amigos",
+      "nextPendingMatch": {
+        "id": "match-id",
+        "homeParticipantName": "Lucas",
+        "awayParticipantName": "Pedro",
+        "phase": "LEAGUE",
+        "round": 2
+      }
+    }
+  ]
+}
+```
+
 ## Campeonatos
 
 As rotas privadas de campeonatos exigem autenticacao via `Authorization: Bearer <token>`.
