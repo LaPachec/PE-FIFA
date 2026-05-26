@@ -82,6 +82,34 @@ Resposta:
 }
 ```
 
+### POST /tournaments/:id/finish
+
+Finaliza um campeonato de liga e define automaticamente o campeao pela classificacao atual.
+
+Regras:
+
+- Retorna `404` se o campeonato nao existir.
+- Retorna `400` se o campeonato nao for do formato `LEAGUE`.
+- Retorna `409` se o campeonato nao estiver em `IN_PROGRESS`.
+- Retorna `400` se o campeonato nao tiver participantes.
+- Retorna `400` se o campeonato nao tiver partidas.
+- Retorna `409` se existir partida pendente.
+- O campeao e o primeiro colocado em `GET /tournaments/:id/standings`.
+- Ao finalizar, o campeonato fica com `status = FINISHED`.
+- O campo `championParticipantId` recebe o participante campeao.
+- O participante campeao fica com `status = CHAMPION`.
+- Os demais participantes permanecem com `status = ACTIVE` nesta etapa.
+
+Resposta:
+
+```json
+{
+  "id": "tournament-id",
+  "status": "FINISHED",
+  "championParticipantId": "participant-id"
+}
+```
+
 ## Participantes
 
 ### GET /tournaments/:tournamentId/participants

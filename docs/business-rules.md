@@ -96,6 +96,24 @@ Criterios de ordenacao:
 4. Maior numero de gols marcados.
 5. Nome do participante em ordem alfabetica.
 
+## Finalizacao de campeonatos de liga
+
+Nesta etapa, apenas campeonatos com formato `LEAGUE` podem ser finalizados automaticamente.
+
+Regras:
+
+1. O campeonato precisa existir.
+2. O campeonato precisa estar com status `IN_PROGRESS`.
+3. O campeonato precisa ter participantes.
+4. O campeonato precisa ter partidas.
+5. Todas as partidas precisam estar com status `FINISHED`.
+6. O campeao e o primeiro colocado da classificacao calculada pela API.
+7. Ao finalizar, o campeonato passa para `FINISHED`.
+8. O campo `championParticipantId` do campeonato recebe o ID do campeao.
+9. O participante campeao passa para `CHAMPION`.
+10. Os demais participantes permanecem `ACTIVE` nesta etapa, para manter a finalizacao simples.
+11. Um campeonato `FINISHED` nao pode ser finalizado novamente.
+
 ## Decisoes pendentes
 
 1. Como aplicar penaltis em fases eliminatorias.

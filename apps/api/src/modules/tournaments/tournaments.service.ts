@@ -1,5 +1,6 @@
 import { prisma, type TournamentFormat } from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
+import { calculateLeagueStandings } from '../standings/standings.service.js';
 import type {
   CreateTournamentInput,
   UpdateTournamentInput,
@@ -212,6 +213,68 @@ export const tournamentsService = {
           matches: {
             orderBy: { matchOrder: 'asc' },
           },
+        },
+      });
+    });
+  },
+
+  async finish(id: string) {
+    return prisma.$transaction(async (transaction) => {
+      const tournament = await transaction.tournament.findUnique({
+        where: { id },
+        include: {
+          participants: {
+            orderBy: { name: 'asc' },
+          },
+          matches: true,
+        },
+      });
+
+      if (!tournament) {
+        throw new AppError('Tournament not found', 404);
+      }
+
+      if (tournament.format !== 'LEAGUE') {
+        throw new AppError('Only LEAGUE tournaments can be finished for now', 400);
+      }
+
+      if (tournament.status !== 'IN_PROGRESS') {
+        throw new AppError('Tournament must be in progress to be finished', 409);
+      }
+
+      if (tournament.participants.length === 0) {
+        throw new AppError('Tournament must have participants to be finished', 400);
+      }
+
+      if (tournament.matches.length === 0) {
+        throw new AppError('Tournament must have matches to be finished', 400);
+      }
+
+      const hasPendingMatches = tournament.matches.some(
+        (match) => match.status === 'PENDING',
+      );
+
+      if (hasPendingMatches) {
+        throw new AppError('Tournament cannot be finished while matches are pending', 409);
+      }
+
+      const standings = calculateLeagueStandings(tournament.participants, tournament.matches);
+      const champion = standings[0];
+
+      if (!champion) {
+        throw new AppError('Tournament champion could not be determined', 400);
+      }
+
+      await transaction.participant.update({
+        where: { id: champion.participantId },
+        data: { status: 'CHAMPION' },
+      });
+
+      return transaction.tournament.update({
+        where: { id },
+        data: {
+          status: 'FINISHED',
+          championParticipantId: champion.participantId,
         },
       });
     });

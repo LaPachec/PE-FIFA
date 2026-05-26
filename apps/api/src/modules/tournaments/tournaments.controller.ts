@@ -72,4 +72,10 @@ export const tournamentsController = {
 
     response.status(200).json(tournament);
   },
+
+  async finish(request: Request, response: Response) {
+    const tournament = await tournamentsService.finish(getTournamentId(request));
+
+    response.status(200).json(tournament);
+  },
 };

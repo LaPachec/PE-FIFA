@@ -1,7 +1,7 @@
 import { prisma } from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
 
-type StandingRow = {
+export type StandingRow = {
   participantId: string;
   name: string;
   nickname: string | null;
@@ -17,12 +17,23 @@ type StandingRow = {
   goalDifference: number;
 };
 
-function createEmptyStanding(participant: {
+type StandingParticipant = {
   id: string;
   name: string;
   nickname: string | null;
   teamName: string | null;
-}): StandingRow {
+};
+
+type StandingMatch = {
+  phase: string;
+  status: string;
+  homeParticipantId: string | null;
+  awayParticipantId: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
+function createEmptyStanding(participant: StandingParticipant): StandingRow {
   return {
     participantId: participant.id,
     name: participant.name,
@@ -65,6 +76,74 @@ function applyMatchResult(
   standing.losses += 1;
 }
 
+export function calculateLeagueStandings(
+  participants: StandingParticipant[],
+  matches: StandingMatch[],
+) {
+  const standingsByParticipantId = new Map(
+    participants.map((participant) => [participant.id, createEmptyStanding(participant)]),
+  );
+
+  for (const match of matches) {
+    if (
+      match.phase !== 'LEAGUE' ||
+      match.status !== 'FINISHED' ||
+      !match.homeParticipantId ||
+      !match.awayParticipantId ||
+      match.homeScore === null ||
+      match.awayScore === null
+    ) {
+      continue;
+    }
+
+    const homeStanding = standingsByParticipantId.get(match.homeParticipantId);
+    const awayStanding = standingsByParticipantId.get(match.awayParticipantId);
+
+    if (!homeStanding || !awayStanding) {
+      continue;
+    }
+
+    applyMatchResult(homeStanding, match.homeScore, match.awayScore);
+    applyMatchResult(awayStanding, match.awayScore, match.homeScore);
+  }
+
+  return Array.from(standingsByParticipantId.values())
+    .sort((first, second) => {
+      if (second.points !== first.points) {
+        return second.points - first.points;
+      }
+
+      if (second.wins !== first.wins) {
+        return second.wins - first.wins;
+      }
+
+      if (second.goalDifference !== first.goalDifference) {
+        return second.goalDifference - first.goalDifference;
+      }
+
+      if (second.goalsFor !== first.goalsFor) {
+        return second.goalsFor - first.goalsFor;
+      }
+
+      return first.name.localeCompare(second.name, 'pt-BR');
+    })
+    .map((standing, index) => ({
+      position: index + 1,
+      participantId: standing.participantId,
+      name: standing.name,
+      nickname: standing.nickname,
+      teamName: standing.teamName,
+      points: standing.points,
+      played: standing.played,
+      wins: standing.wins,
+      draws: standing.draws,
+      losses: standing.losses,
+      goalsFor: standing.goalsFor,
+      goalsAgainst: standing.goalsAgainst,
+      goalDifference: standing.goalDifference,
+    }));
+}
+
 export const standingsService = {
   async getLeagueStandings(tournamentId: string) {
     const tournament = await prisma.tournament.findUnique({
@@ -90,68 +169,6 @@ export const standingsService = {
       throw new AppError('Standings currently support only LEAGUE tournaments', 400);
     }
 
-    const standingsByParticipantId = new Map(
-      tournament.participants.map((participant) => [
-        participant.id,
-        createEmptyStanding(participant),
-      ]),
-    );
-
-    for (const match of tournament.matches) {
-      if (
-        !match.homeParticipantId ||
-        !match.awayParticipantId ||
-        match.homeScore === null ||
-        match.awayScore === null
-      ) {
-        continue;
-      }
-
-      const homeStanding = standingsByParticipantId.get(match.homeParticipantId);
-      const awayStanding = standingsByParticipantId.get(match.awayParticipantId);
-
-      if (!homeStanding || !awayStanding) {
-        continue;
-      }
-
-      applyMatchResult(homeStanding, match.homeScore, match.awayScore);
-      applyMatchResult(awayStanding, match.awayScore, match.homeScore);
-    }
-
-    return Array.from(standingsByParticipantId.values())
-      .sort((first, second) => {
-        if (second.points !== first.points) {
-          return second.points - first.points;
-        }
-
-        if (second.wins !== first.wins) {
-          return second.wins - first.wins;
-        }
-
-        if (second.goalDifference !== first.goalDifference) {
-          return second.goalDifference - first.goalDifference;
-        }
-
-        if (second.goalsFor !== first.goalsFor) {
-          return second.goalsFor - first.goalsFor;
-        }
-
-        return first.name.localeCompare(second.name, 'pt-BR');
-      })
-      .map((standing, index) => ({
-        position: index + 1,
-        participantId: standing.participantId,
-        name: standing.name,
-        nickname: standing.nickname,
-        teamName: standing.teamName,
-        points: standing.points,
-        played: standing.played,
-        wins: standing.wins,
-        draws: standing.draws,
-        losses: standing.losses,
-        goalsFor: standing.goalsFor,
-        goalsAgainst: standing.goalsAgainst,
-        goalDifference: standing.goalDifference,
-      }));
+    return calculateLeagueStandings(tournament.participants, tournament.matches);
   },
 };
