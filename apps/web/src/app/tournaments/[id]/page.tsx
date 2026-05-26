@@ -72,7 +72,9 @@ export default async function TournamentDetailsPage({
 
         <TournamentLeaguePanel
           tournamentId={tournament.id}
+          tournamentFormat={tournament.format}
           tournamentStatus={tournament.status}
+          championParticipantId={tournament.championParticipantId}
         />
       </section>
     </main>

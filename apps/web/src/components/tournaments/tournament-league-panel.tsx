@@ -3,16 +3,24 @@
 import { useState } from 'react';
 import { TournamentMatches } from '@/components/matches/tournament-matches';
 import { StandingsSection } from '@/components/standings/standings-section';
-import type { Tournament, TournamentStatus } from '@/services/tournaments';
+import type {
+  Tournament,
+  TournamentFormat,
+  TournamentStatus,
+} from '@/services/tournaments';
 
 type TournamentLeaguePanelProps = {
   tournamentId: string;
+  tournamentFormat: TournamentFormat;
   tournamentStatus: TournamentStatus;
+  championParticipantId: string | null;
 };
 
 export function TournamentLeaguePanel({
   tournamentId,
+  tournamentFormat,
   tournamentStatus,
+  championParticipantId,
 }: TournamentLeaguePanelProps) {
   const [standingsRefreshKey, setStandingsRefreshKey] = useState(0);
   const [currentStatus, setCurrentStatus] = useState<TournamentStatus>(tournamentStatus);
@@ -28,14 +36,18 @@ export function TournamentLeaguePanel({
 
   return (
     <>
-      <StandingsSection
-        tournamentId={tournamentId}
-        tournamentStatus={currentStatus}
-        refreshKey={standingsRefreshKey}
-      />
+      {tournamentFormat === 'LEAGUE' ? (
+        <StandingsSection
+          tournamentId={tournamentId}
+          tournamentStatus={currentStatus}
+          refreshKey={standingsRefreshKey}
+        />
+      ) : null}
       <TournamentMatches
         tournamentId={tournamentId}
+        tournamentFormat={tournamentFormat}
         tournamentStatus={currentStatus}
+        championParticipantId={championParticipantId}
         onMatchesChanged={refreshStandings}
         onTournamentStatusChanged={handleTournamentStatusChanged}
       />
