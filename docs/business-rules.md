@@ -40,19 +40,37 @@ Fases planejadas:
 
 ## Inicio de campeonatos de liga
 
-Nesta etapa, apenas campeonatos com formato `LEAGUE` podem ser iniciados automaticamente.
+Campeonatos com formato `LEAGUE` podem ser iniciados automaticamente gerando partidas de liga.
 
 Regras:
 
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
 3. O campeonato precisa ter pelo menos 3 participantes.
-4. O formato `LEAGUE_KNOCKOUT` ainda nao pode ser iniciado.
-5. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
-6. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
-7. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
-8. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
-9. O campeonato nao pode ser iniciado duas vezes.
+4. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
+5. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
+6. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+7. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+8. O campeonato nao pode ser iniciado duas vezes.
+
+## Inicio de campeonatos liga + mata-mata
+
+Campeonatos com formato `LEAGUE_KNOCKOUT` iniciam pelo mesmo fluxo da liga, gerando apenas partidas da fase `LEAGUE` neste MVP.
+
+Regras:
+
+1. O campeonato precisa existir.
+2. O campeonato precisa estar com status `DRAFT`.
+3. O campeonato precisa ter pelo menos 3 participantes.
+4. `qualifiedCount` e obrigatorio.
+5. `qualifiedCount` deve ser `2`, `4`, `8` ou `16`.
+6. `qualifiedCount` nao pode ser maior que o numero de participantes.
+7. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
+8. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
+9. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+10. A fase mata-mata nao e gerada nesta etapa.
+11. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+12. O campeonato nao pode ser iniciado duas vezes.
 
 ## Inicio de campeonatos mata-mata
 
@@ -139,7 +157,7 @@ A classificacao da liga e calculada dinamicamente a partir das partidas finaliza
 Regras:
 
 1. O campeonato precisa existir.
-2. O campeonato precisa ser do formato `LEAGUE`.
+2. O campeonato precisa ser do formato `LEAGUE` ou `LEAGUE_KNOCKOUT`.
 3. Apenas partidas com `status = FINISHED` entram no calculo.
 4. Participantes sem partidas finalizadas aparecem com estatisticas zeradas.
 5. Vitoria vale 3 pontos.

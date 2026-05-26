@@ -165,8 +165,11 @@ export const standingsService = {
       throw new AppError('Tournament not found', 404);
     }
 
-    if (tournament.format !== 'LEAGUE') {
-      throw new AppError('Standings currently support only LEAGUE tournaments', 400);
+    if (tournament.format !== 'LEAGUE' && tournament.format !== 'LEAGUE_KNOCKOUT') {
+      throw new AppError(
+        'Standings currently support only LEAGUE or LEAGUE_KNOCKOUT tournaments',
+        400,
+      );
     }
 
     return calculateLeagueStandings(tournament.participants, tournament.matches);

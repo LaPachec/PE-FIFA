@@ -57,6 +57,23 @@ function assertQualifiedCount(format: TournamentFormat, qualifiedCount?: number 
   }
 }
 
+function assertLeagueKnockoutStartRules(
+  qualifiedCount: number | null,
+  participantsCount: number,
+) {
+  if (!qualifiedCount) {
+    throw new AppError('qualifiedCount is required for LEAGUE_KNOCKOUT tournaments', 400);
+  }
+
+  if (![2, 4, 8, 16].includes(qualifiedCount)) {
+    throw new AppError('qualifiedCount must be 2, 4, 8 or 16', 400);
+  }
+
+  if (qualifiedCount > participantsCount) {
+    throw new AppError('qualifiedCount cannot be greater than participants count', 400);
+  }
+}
+
 type MatchParticipant = {
   id: string;
 };
@@ -254,8 +271,18 @@ export const tournamentsService = {
         throw new AppError('Tournament has already been started', 409);
       }
 
-      if (tournament.format === 'LEAGUE' && tournament.participants.length < 3) {
+      if (
+        (tournament.format === 'LEAGUE' || tournament.format === 'LEAGUE_KNOCKOUT') &&
+        tournament.participants.length < 3
+      ) {
         throw new AppError('Tournament must have at least 3 participants to start', 400);
+      }
+
+      if (tournament.format === 'LEAGUE_KNOCKOUT') {
+        assertLeagueKnockoutStartRules(
+          tournament.qualifiedCount,
+          tournament.participants.length,
+        );
       }
 
       const existingMatchesCount = await transaction.match.count({
@@ -268,7 +295,7 @@ export const tournamentsService = {
 
       let matchesToCreate: GeneratedMatch[];
 
-      if (tournament.format === 'LEAGUE') {
+      if (tournament.format === 'LEAGUE' || tournament.format === 'LEAGUE_KNOCKOUT') {
         matchesToCreate = createLeagueMatches(
           id,
           tournament.participants,
@@ -277,7 +304,7 @@ export const tournamentsService = {
       } else if (tournament.format === 'KNOCKOUT') {
         matchesToCreate = createKnockoutFirstRoundMatches(id, tournament.participants);
       } else {
-        throw new AppError('LEAGUE_KNOCKOUT tournaments cannot be started yet', 400);
+        throw new AppError('Unsupported tournament format', 400);
       }
 
       await transaction.match.createMany({

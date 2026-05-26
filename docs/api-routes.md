@@ -103,14 +103,15 @@ Regras:
 - Retorna `409` se o campeonato ja tiver sido iniciado.
 - Para `LEAGUE`, retorna `400` se o campeonato tiver menos de 3 participantes.
 - Para `KNOCKOUT`, retorna `400` se o campeonato nao tiver exatamente 4, 8 ou 16 participantes.
-- Para `LEAGUE_KNOCKOUT`, retorna `400` porque o formato ainda nao foi implementado.
+- Para `LEAGUE_KNOCKOUT`, retorna `400` se tiver menos de 3 participantes.
+- Para `LEAGUE_KNOCKOUT`, `qualifiedCount` e obrigatorio, deve ser `2`, `4`, `8` ou `16`, e nao pode ser maior que o numero de participantes.
 - A geracao de partidas e a alteracao de status para `IN_PROGRESS` acontecem em uma transaction.
 
 Comportamento por formato:
 
 - `LEAGUE`: gera partidas entre todos os pares de participantes. Se `isTwoLegged` for `true`, gera tambem os confrontos inversos.
 - `KNOCKOUT`: gera apenas a primeira fase eliminatoria.
-- `LEAGUE_KNOCKOUT`: ainda nao inicia automaticamente.
+- `LEAGUE_KNOCKOUT`: gera inicialmente apenas as partidas da fase `LEAGUE`. A fase mata-mata ainda nao e criada neste endpoint.
 
 Fases iniciais do mata-mata:
 
@@ -286,12 +287,12 @@ Validacoes e regras:
 
 ### GET /tournaments/:id/standings
 
-Retorna a classificacao calculada dinamicamente para campeonatos de liga.
+Retorna a classificacao calculada dinamicamente para campeonatos com fase de liga.
 
 Regras:
 
 - Retorna `404` se o campeonato nao existir.
-- Retorna `400` se o campeonato nao for do formato `LEAGUE`.
+- Retorna `400` se o campeonato nao for do formato `LEAGUE` ou `LEAGUE_KNOCKOUT`.
 - Considera apenas partidas com `status = FINISHED`.
 - Participantes sem partidas finalizadas aparecem com todos os numeros zerados.
 - Vitoria vale 3 pontos.
