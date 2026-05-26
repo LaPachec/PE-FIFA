@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { TournamentMatches } from '@/components/matches/tournament-matches';
 import { notFound } from 'next/navigation';
 import { ParticipantsManager } from '@/components/participants/participants-manager';
+import { TournamentLeaguePanel } from '@/components/tournaments/tournament-league-panel';
 import { getTournament } from '@/services/tournaments';
 
 const formatLabels = {
@@ -84,7 +84,7 @@ export default async function TournamentDetailsPage({
           tournamentStatus={tournament.status}
         />
 
-        <TournamentMatches
+        <TournamentLeaguePanel
           tournamentId={tournament.id}
           tournamentStatus={tournament.status}
         />

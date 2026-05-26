@@ -13,6 +13,7 @@ import { startTournament, type TournamentStatus } from '@/services/tournaments';
 type TournamentMatchesProps = {
   tournamentId: string;
   tournamentStatus: TournamentStatus;
+  onMatchesChanged?: () => void;
 };
 
 type ResultFormState = {
@@ -54,6 +55,7 @@ function getResultFormError(form: ResultFormState) {
 export function TournamentMatches({
   tournamentId,
   tournamentStatus,
+  onMatchesChanged,
 }: TournamentMatchesProps) {
   const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState<TournamentStatus>(tournamentStatus);
@@ -124,6 +126,7 @@ export function TournamentMatches({
       const tournament = await startTournament(tournamentId);
       setCurrentStatus(tournament.status);
       await loadMatches();
+      onMatchesChanged?.();
       router.refresh();
       setFeedback({ type: 'success', message: 'Campeonato iniciado com sucesso.' });
     } catch (error) {
@@ -196,6 +199,7 @@ export function TournamentMatches({
       );
       setEditingResultMatchId(null);
       setResultForm(emptyResultForm);
+      onMatchesChanged?.();
       setFeedback({ type: 'success', message: 'Resultado salvo com sucesso.' });
     } catch (error) {
       setFeedback({
