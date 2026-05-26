@@ -180,6 +180,27 @@ Regras:
 - Retorna `404` se o campeonato nao existir.
 - As partidas sao ordenadas por `round` e `matchOrder`.
 
-## Rotas planejadas
+### PATCH /matches/:id/result
 
-- `PATCH /matches/:id/result`
+Registra ou atualiza o resultado de uma partida de liga.
+
+Body:
+
+```json
+{
+  "homeScore": 3,
+  "awayScore": 1
+}
+```
+
+Validacoes e regras:
+
+- `homeScore` e obrigatorio, inteiro e nao pode ser negativo.
+- `awayScore` e obrigatorio, inteiro e nao pode ser negativo.
+- Retorna `404` se a partida nao existir.
+- Retorna `404` se o campeonato da partida nao existir.
+- Retorna `409` se o campeonato nao estiver em `IN_PROGRESS`.
+- Atualmente apenas partidas com `phase = LEAGUE` podem receber resultado.
+- Empates sao permitidos na liga.
+- Ao registrar resultado, a partida fica com `status = FINISHED` e `playedAt` atualizado.
+- Se a partida ja estiver finalizada, o resultado pode ser atualizado.

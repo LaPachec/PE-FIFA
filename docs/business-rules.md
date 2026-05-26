@@ -54,6 +54,25 @@ Regras:
 8. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
 9. O campeonato nao pode ser iniciado duas vezes.
 
+## Registro de resultados da liga
+
+Nesta etapa, apenas partidas da fase `LEAGUE` podem receber resultado.
+
+Regras:
+
+1. A partida precisa existir.
+2. O campeonato da partida precisa existir.
+3. O campeonato precisa estar com status `IN_PROGRESS`.
+4. O placar do mandante e do visitante e obrigatorio.
+5. Placar deve ser um numero inteiro maior ou igual a zero.
+6. Empates sao permitidos em partidas de liga.
+7. Ao registrar resultado, a partida recebe `status = FINISHED`.
+8. O campo `playedAt` e atualizado sempre que o resultado for registrado ou alterado.
+9. Partidas finalizadas podem ter o resultado corrigido.
+10. Em empate, `winnerParticipantId` fica `null`.
+11. Quando houver vencedor, `winnerParticipantId` recebe o participante mandante ou visitante conforme o placar.
+12. A classificacao da liga ainda nao e calculada nesta etapa.
+
 ## Decisoes pendentes
 
 1. Criterios de desempate na liga.
