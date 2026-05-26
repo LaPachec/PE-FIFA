@@ -263,6 +263,25 @@ Regras:
 4. Dados sensiveis do usuario dono nao devem ser retornados pela API publica.
 5. A pagina publica mostra campeonato, participantes, partidas, classificacao e campeao quando houver.
 
+## Convite e inscricao publica
+
+O criador pode compartilhar um link publico para amigos se inscreverem como participantes enquanto o campeonato ainda esta em rascunho.
+
+Regras:
+
+1. O convite usa o `slug` publico do campeonato neste MVP.
+2. Dados de convite nao exigem autenticacao.
+3. A inscricao publica nao exige login.
+4. `canJoin` e `true` apenas quando o campeonato esta em `DRAFT`.
+5. Inscricoes publicas sao bloqueadas quando o campeonato sai de `DRAFT`.
+6. `name` e obrigatorio.
+7. `nickname` e opcional.
+8. `teamName` e opcional.
+9. Nao pode existir participante com o mesmo `name` dentro do campeonato.
+10. Nao pode existir participante com o mesmo `nickname` dentro do campeonato quando `nickname` for informado.
+11. Participantes inscritos por convite entram com `status = ACTIVE`.
+12. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
+
 ## Decisoes pendentes
 
 1. Como aplicar penaltis em fases eliminatorias.

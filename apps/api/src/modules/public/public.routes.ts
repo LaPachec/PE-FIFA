@@ -8,3 +8,11 @@ publicRouter.get(
   '/tournaments/:slug',
   asyncHandler(publicTournamentsController.findBySlug),
 );
+publicRouter.get(
+  '/tournaments/:slug/invite',
+  asyncHandler(publicTournamentsController.getInvite),
+);
+publicRouter.post(
+  '/tournaments/:slug/join',
+  asyncHandler(publicTournamentsController.join),
+);

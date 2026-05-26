@@ -110,6 +110,58 @@ Resposta:
 }
 ```
 
+### GET /public/tournaments/:slug/invite
+
+Retorna os dados publicos necessarios para exibir um convite de inscricao.
+
+Regras:
+
+- Nao exige autenticacao.
+- Retorna `404` se o campeonato nao existir.
+- Nao retorna dados sensiveis do usuario dono.
+- `canJoin` e `true` apenas quando o campeonato esta em `DRAFT`.
+
+Resposta:
+
+```json
+{
+  "id": "tournament-id",
+  "name": "Copa dos Amigos",
+  "slug": "copa-dos-amigos",
+  "description": "Campeonato local",
+  "format": "LEAGUE",
+  "status": "DRAFT",
+  "totalParticipants": 4,
+  "canJoin": true
+}
+```
+
+### POST /public/tournaments/:slug/join
+
+Permite que uma pessoa se inscreva publicamente como participante de um campeonato.
+
+Body:
+
+```json
+{
+  "name": "Lucas",
+  "nickname": "Lukinhas",
+  "teamName": "Real Madrid"
+}
+```
+
+Regras:
+
+- Nao exige autenticacao.
+- Retorna `404` se o campeonato nao existir.
+- Retorna `409` se o campeonato nao estiver em `DRAFT`.
+- `name` e obrigatorio.
+- `nickname` e opcional.
+- `teamName` e opcional.
+- Nao permite dois participantes com o mesmo `name` no mesmo campeonato.
+- Nao permite dois participantes com o mesmo `nickname` no mesmo campeonato quando `nickname` for informado.
+- O participante criado recebe `status = ACTIVE`.
+
 ## Dashboard
 
 ### GET /dashboard/summary
