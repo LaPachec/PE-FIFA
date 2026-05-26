@@ -622,3 +622,80 @@ Resposta:
   }
 ]
 ```
+
+## Estatisticas
+
+### GET /tournaments/:id/statistics
+
+Retorna estatisticas gerais e por participante calculadas dinamicamente a partir das partidas do campeonato.
+
+Headers:
+
+```http
+Authorization: Bearer <token>
+```
+
+Regras:
+
+- Exige usuario autenticado.
+- Retorna `404` se o campeonato nao existir ou nao pertencer ao usuario autenticado.
+- Considera apenas partidas com `status = FINISHED` para gols, medias, destaques e estatisticas por participante.
+- Partidas `PENDING` entram apenas nos contadores de partidas pendentes.
+- Participantes considerados nas estatisticas individuais: `ACTIVE`, `ELIMINATED` e `CHAMPION`.
+- Participantes `PENDING` e `REJECTED` nao entram nas estatisticas.
+- Se nao houver partidas finalizadas, os totais de gols e medias ficam zerados e os destaques retornam arrays vazios.
+- Empates nos destaques retornam todos os participantes empatados em arrays.
+- As estatisticas nao sao persistidas no banco.
+
+Resposta:
+
+```json
+{
+  "totalParticipants": 4,
+  "totalMatches": 6,
+  "finishedMatches": 3,
+  "pendingMatches": 3,
+  "totalGoals": 14,
+  "averageGoalsPerMatch": 4.67,
+  "highestScoringMatch": {
+    "matchId": "match-id",
+    "homeParticipantName": "Lucas",
+    "awayParticipantName": "Pedro",
+    "homeScore": 5,
+    "awayScore": 3,
+    "totalGoals": 8
+  },
+  "biggestWin": {
+    "matchId": "match-id",
+    "homeParticipantName": "Lucas",
+    "awayParticipantName": "Pedro",
+    "homeScore": 4,
+    "awayScore": 1,
+    "goalDifference": 3,
+    "winnerName": "Lucas"
+  },
+  "participantStatistics": [
+    {
+      "participantId": "participant-id",
+      "name": "Lucas",
+      "nickname": "Lukinhas",
+      "teamName": "Real Madrid",
+      "matchesPlayed": 2,
+      "wins": 2,
+      "draws": 0,
+      "losses": 0,
+      "goalsFor": 7,
+      "goalsAgainst": 2,
+      "goalDifference": 5,
+      "points": 6
+    }
+  ],
+  "highlights": {
+    "topScorers": [],
+    "bestAttacks": [],
+    "bestDefenses": [],
+    "mostWinsPlayers": [],
+    "bestGoalDifferences": []
+  }
+}
+```

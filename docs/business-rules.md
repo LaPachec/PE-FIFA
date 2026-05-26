@@ -244,6 +244,25 @@ Criterios de ordenacao:
 4. Maior numero de gols marcados.
 5. Nome do participante em ordem alfabetica.
 
+## Estatisticas do campeonato
+
+As estatisticas do campeonato sao calculadas dinamicamente a partir das partidas finalizadas.
+
+Regras:
+
+1. O campeonato precisa existir e pertencer ao usuario autenticado.
+2. Apenas partidas com `status = FINISHED` entram nos calculos de gols, media, destaques e estatisticas por participante.
+3. Partidas `PENDING` entram apenas nos contadores de partidas pendentes.
+4. Participantes considerados nas estatisticas individuais: `ACTIVE`, `ELIMINATED` e `CHAMPION`.
+5. Participantes `PENDING` e `REJECTED` nao entram nas estatisticas.
+6. Se nao houver partidas finalizadas, os totais de gols e medias ficam zerados e os destaques retornam arrays vazios.
+7. `averageGoalsPerMatch` e calculado por `totalGoals / finishedMatches`.
+8. A partida com mais gols considera a soma dos placares dos dois participantes.
+9. A maior goleada considera a maior diferenca absoluta de gols em partidas com vencedor.
+10. Melhor defesa considera apenas participantes com pelo menos 1 jogo.
+11. Empates em destaques retornam todos os participantes empatados.
+12. As estatisticas nao sao persistidas no banco nesta etapa.
+
 ## Finalizacao de campeonatos de liga
 
 Nesta etapa, apenas campeonatos com formato `LEAGUE` podem ser finalizados automaticamente.

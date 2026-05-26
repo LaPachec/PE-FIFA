@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { tournamentMatchesRouter } from '../matches/matches.routes.js';
 import { tournamentParticipantsRouter } from '../participants/participants.routes.js';
 import { tournamentStandingsRouter } from '../standings/standings.routes.js';
+import { tournamentStatisticsRouter } from '../statistics/statistics.routes.js';
 import { asyncHandler } from '../../shared/middlewares/async-handler.js';
 import { requireAuth } from '../../shared/middlewares/require-auth.js';
 import { requireTournamentOwner } from '../../shared/middlewares/require-tournament-owner.js';
@@ -27,6 +28,11 @@ tournamentsRouter.use(
   '/:tournamentId/standings',
   requireTournamentOwner('tournamentId'),
   tournamentStandingsRouter,
+);
+tournamentsRouter.use(
+  '/:tournamentId/statistics',
+  requireTournamentOwner('tournamentId'),
+  tournamentStatisticsRouter,
 );
 tournamentsRouter.post(
   '/:id/start',
