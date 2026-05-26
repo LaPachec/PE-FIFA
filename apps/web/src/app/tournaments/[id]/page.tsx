@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { ParticipantsManager } from '@/components/participants/participants-manager';
+import { InviteLinkCard } from '@/components/tournaments/invite-link-card';
 import { TournamentLeaguePanel } from '@/components/tournaments/tournament-league-panel';
 import { StatCard, StatusBadge } from '@/components/tournaments/tournament-visuals';
 import { getTournament, type Tournament } from '@/services/tournaments';
@@ -92,6 +93,10 @@ export default function TournamentDetailsPage() {
                     value={new Intl.DateTimeFormat('pt-BR').format(new Date(tournament.createdAt))}
                   />
                 </div>
+
+                {tournament.status === 'DRAFT' ? (
+                  <InviteLinkCard slug={tournament.slug} />
+                ) : null}
 
                 <ParticipantsManager
                   tournamentId={tournament.id}

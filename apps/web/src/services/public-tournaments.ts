@@ -1,7 +1,7 @@
 import type { Match } from '@/services/matches';
 import type { Participant } from '@/services/participants';
 import type { StandingRow } from '@/services/standings';
-import type { Tournament } from '@/services/tournaments';
+import type { Tournament, TournamentFormat, TournamentStatus } from '@/services/tournaments';
 
 export type PublicTournament = Omit<Tournament, 'ownerId'>;
 
@@ -11,6 +11,23 @@ export type PublicTournamentDetails = {
   matches: Match[];
   standings: StandingRow[];
   champion: Participant | null;
+};
+
+export type TournamentInvite = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  format: TournamentFormat;
+  status: TournamentStatus;
+  totalParticipants: number;
+  canJoin: boolean;
+};
+
+export type JoinTournamentPayload = {
+  name: string;
+  nickname?: string | null;
+  teamName?: string | null;
 };
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
@@ -33,4 +50,44 @@ export async function getPublicTournamentBySlug(slug: string) {
   }
 
   return response.json() as Promise<PublicTournamentDetails>;
+}
+
+export async function getTournamentInvite(slug: string) {
+  const response = await fetch(`${apiUrl}/public/tournaments/${slug}/invite`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message ?? 'Erro ao carregar convite');
+  }
+
+  return response.json() as Promise<TournamentInvite>;
+}
+
+export async function joinTournamentByInvite(
+  slug: string,
+  payload: JoinTournamentPayload,
+) {
+  const response = await fetch(`${apiUrl}/public/tournaments/${slug}/join`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message ?? 'Nao foi possivel realizar a inscricao');
+  }
+
+  return response.json() as Promise<Participant>;
 }
