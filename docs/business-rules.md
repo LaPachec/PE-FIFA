@@ -47,12 +47,31 @@ Regras:
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
 3. O campeonato precisa ter pelo menos 3 participantes.
-4. Formatos `KNOCKOUT` e `LEAGUE_KNOCKOUT` ainda nao podem ser iniciados.
+4. O formato `LEAGUE_KNOCKOUT` ainda nao pode ser iniciado.
 5. Ao iniciar, o sistema gera partidas para todos os pares de participantes.
 6. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
 7. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
 8. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
 9. O campeonato nao pode ser iniciado duas vezes.
+
+## Inicio de campeonatos mata-mata
+
+Nesta etapa, campeonatos com formato `KNOCKOUT` podem gerar automaticamente apenas a primeira fase eliminatoria.
+
+Regras:
+
+1. O campeonato precisa existir.
+2. O campeonato precisa estar com status `DRAFT`.
+3. O campeonato precisa ter exatamente 4, 8 ou 16 participantes.
+4. A ordem de cadastro dos participantes define os confrontos.
+5. O pareamento usa o primeiro contra o ultimo, o segundo contra o penultimo, e assim por diante.
+6. Com 4 participantes, a fase gerada e `SEMI_FINAL`.
+7. Com 8 participantes, a fase gerada e `QUARTER_FINAL`.
+8. Com 16 participantes, a fase gerada e `ROUND_OF_16`.
+9. Todas as partidas geradas usam `round = 1` e `status = PENDING`.
+10. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+11. O campeonato nao pode ser iniciado duas vezes.
+12. Ida e volta, disputa de terceiro lugar e avanco automatico ainda nao sao tratados nesta etapa.
 
 ## Registro de resultados da liga
 

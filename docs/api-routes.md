@@ -95,16 +95,28 @@ Remove fisicamente um campeonato.
 
 ### POST /tournaments/:id/start
 
-Inicia um campeonato e gera automaticamente partidas de liga.
+Inicia um campeonato e gera automaticamente as partidas iniciais conforme o formato.
 
 Regras:
 
 - Retorna `404` se o campeonato nao existir.
 - Retorna `409` se o campeonato ja tiver sido iniciado.
-- Retorna `400` se o campeonato tiver menos de 3 participantes.
-- Retorna `400` se o formato for `KNOCKOUT` ou `LEAGUE_KNOCKOUT`.
-- Atualmente apenas campeonatos `LEAGUE` podem ser iniciados.
+- Para `LEAGUE`, retorna `400` se o campeonato tiver menos de 3 participantes.
+- Para `KNOCKOUT`, retorna `400` se o campeonato nao tiver exatamente 4, 8 ou 16 participantes.
+- Para `LEAGUE_KNOCKOUT`, retorna `400` porque o formato ainda nao foi implementado.
 - A geracao de partidas e a alteracao de status para `IN_PROGRESS` acontecem em uma transaction.
+
+Comportamento por formato:
+
+- `LEAGUE`: gera partidas entre todos os pares de participantes. Se `isTwoLegged` for `true`, gera tambem os confrontos inversos.
+- `KNOCKOUT`: gera apenas a primeira fase eliminatoria.
+- `LEAGUE_KNOCKOUT`: ainda nao inicia automaticamente.
+
+Fases iniciais do mata-mata:
+
+- 4 participantes: `SEMI_FINAL`.
+- 8 participantes: `QUARTER_FINAL`.
+- 16 participantes: `ROUND_OF_16`.
 
 Resposta:
 

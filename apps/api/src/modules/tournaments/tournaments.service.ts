@@ -1,4 +1,8 @@
-import { prisma, type TournamentFormat } from '@fifa-tournament-manager/database';
+import {
+  prisma,
+  type MatchPhase,
+  type TournamentFormat,
+} from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
 import { calculateLeagueStandings } from '../standings/standings.service.js';
 import type {
@@ -51,6 +55,108 @@ function assertQualifiedCount(format: TournamentFormat, qualifiedCount?: number 
   if (format === 'LEAGUE_KNOCKOUT' && !qualifiedCount) {
     throw new AppError('qualifiedCount is required for LEAGUE_KNOCKOUT tournaments', 400);
   }
+}
+
+type MatchParticipant = {
+  id: string;
+};
+
+type GeneratedMatch = {
+  tournamentId: string;
+  phase: MatchPhase;
+  round: number;
+  homeParticipantId: string;
+  awayParticipantId: string;
+  status: 'PENDING';
+  matchOrder: number;
+};
+
+function createLeagueMatches(
+  tournamentId: string,
+  participants: MatchParticipant[],
+  isTwoLegged: boolean,
+) {
+  const matchesToCreate: GeneratedMatch[] = [];
+  let matchOrder = 1;
+
+  for (let homeIndex = 0; homeIndex < participants.length; homeIndex += 1) {
+    for (let awayIndex = homeIndex + 1; awayIndex < participants.length; awayIndex += 1) {
+      const homeParticipant = participants[homeIndex];
+      const awayParticipant = participants[awayIndex];
+
+      matchesToCreate.push({
+        tournamentId,
+        phase: 'LEAGUE',
+        round: matchOrder,
+        homeParticipantId: homeParticipant.id,
+        awayParticipantId: awayParticipant.id,
+        status: 'PENDING',
+        matchOrder,
+      });
+      matchOrder += 1;
+
+      if (isTwoLegged) {
+        matchesToCreate.push({
+          tournamentId,
+          phase: 'LEAGUE',
+          round: matchOrder,
+          homeParticipantId: awayParticipant.id,
+          awayParticipantId: homeParticipant.id,
+          status: 'PENDING',
+          matchOrder,
+        });
+        matchOrder += 1;
+      }
+    }
+  }
+
+  return matchesToCreate;
+}
+
+function getKnockoutPhase(participantsCount: number): MatchPhase {
+  if (participantsCount === 4) {
+    return 'SEMI_FINAL';
+  }
+
+  if (participantsCount === 8) {
+    return 'QUARTER_FINAL';
+  }
+
+  if (participantsCount === 16) {
+    return 'ROUND_OF_16';
+  }
+
+  throw new AppError('KNOCKOUT tournaments must have exactly 4, 8 or 16 participants', 400);
+}
+
+function createKnockoutFirstRoundMatches(
+  tournamentId: string,
+  participants: MatchParticipant[],
+) {
+  const phase = getKnockoutPhase(participants.length);
+  const matchesToCreate: GeneratedMatch[] = [];
+
+  for (let index = 0; index < participants.length / 2; index += 1) {
+    const homeParticipant = participants[index];
+    const awayParticipant = participants[participants.length - 1 - index];
+    const matchOrder = index + 1;
+
+    if (homeParticipant.id === awayParticipant.id) {
+      throw new AppError('Cannot create a match with the same participant twice', 400);
+    }
+
+    matchesToCreate.push({
+      tournamentId,
+      phase,
+      round: 1,
+      homeParticipantId: homeParticipant.id,
+      awayParticipantId: awayParticipant.id,
+      status: 'PENDING',
+      matchOrder,
+    });
+  }
+
+  return matchesToCreate;
 }
 
 export const tournamentsService = {
@@ -148,11 +254,7 @@ export const tournamentsService = {
         throw new AppError('Tournament has already been started', 409);
       }
 
-      if (tournament.format !== 'LEAGUE') {
-        throw new AppError('Only LEAGUE tournaments can be started for now', 400);
-      }
-
-      if (tournament.participants.length < 3) {
+      if (tournament.format === 'LEAGUE' && tournament.participants.length < 3) {
         throw new AppError('Tournament must have at least 3 participants to start', 400);
       }
 
@@ -164,42 +266,18 @@ export const tournamentsService = {
         throw new AppError('Tournament already has generated matches', 409);
       }
 
-      const matchesToCreate = [];
-      let matchOrder = 1;
+      let matchesToCreate: GeneratedMatch[];
 
-      for (let homeIndex = 0; homeIndex < tournament.participants.length; homeIndex += 1) {
-        for (
-          let awayIndex = homeIndex + 1;
-          awayIndex < tournament.participants.length;
-          awayIndex += 1
-        ) {
-          const homeParticipant = tournament.participants[homeIndex];
-          const awayParticipant = tournament.participants[awayIndex];
-
-          matchesToCreate.push({
-            tournamentId: id,
-            phase: 'LEAGUE' as const,
-            round: matchOrder,
-            homeParticipantId: homeParticipant.id,
-            awayParticipantId: awayParticipant.id,
-            status: 'PENDING' as const,
-            matchOrder,
-          });
-          matchOrder += 1;
-
-          if (tournament.isTwoLegged) {
-            matchesToCreate.push({
-              tournamentId: id,
-              phase: 'LEAGUE' as const,
-              round: matchOrder,
-              homeParticipantId: awayParticipant.id,
-              awayParticipantId: homeParticipant.id,
-              status: 'PENDING' as const,
-              matchOrder,
-            });
-            matchOrder += 1;
-          }
-        }
+      if (tournament.format === 'LEAGUE') {
+        matchesToCreate = createLeagueMatches(
+          id,
+          tournament.participants,
+          tournament.isTwoLegged,
+        );
+      } else if (tournament.format === 'KNOCKOUT') {
+        matchesToCreate = createKnockoutFirstRoundMatches(id, tournament.participants);
+      } else {
+        throw new AppError('LEAGUE_KNOCKOUT tournaments cannot be started yet', 400);
       }
 
       await transaction.match.createMany({
