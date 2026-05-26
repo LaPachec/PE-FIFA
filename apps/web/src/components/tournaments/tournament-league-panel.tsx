@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { TournamentMatches } from '@/components/matches/tournament-matches';
+import { StatisticsSection } from '@/components/statistics/statistics-section';
 import { StandingsSection } from '@/components/standings/standings-section';
 import type {
   Tournament,
@@ -25,19 +26,25 @@ export function TournamentLeaguePanel({
   championParticipantId,
 }: TournamentLeaguePanelProps) {
   const [standingsRefreshKey, setStandingsRefreshKey] = useState(0);
+  const [statisticsRefreshKey, setStatisticsRefreshKey] = useState(0);
   const [currentStatus, setCurrentStatus] = useState<TournamentStatus>(tournamentStatus);
 
-  function refreshStandings() {
+  function refreshData() {
     setStandingsRefreshKey((currentKey) => currentKey + 1);
+    setStatisticsRefreshKey((currentKey) => currentKey + 1);
   }
 
   function handleTournamentStatusChanged(tournament: Tournament) {
     setCurrentStatus(tournament.status);
-    refreshStandings();
+    refreshData();
   }
 
   return (
     <>
+      <StatisticsSection
+        tournamentId={tournamentId}
+        refreshKey={statisticsRefreshKey}
+      />
       {tournamentFormat === 'LEAGUE' || tournamentFormat === 'LEAGUE_KNOCKOUT' ? (
         <StandingsSection
           tournamentId={tournamentId}
@@ -53,7 +60,7 @@ export function TournamentLeaguePanel({
         tournamentStatus={currentStatus}
         qualifiedCount={qualifiedCount}
         championParticipantId={championParticipantId}
-        onMatchesChanged={refreshStandings}
+        onMatchesChanged={refreshData}
         onTournamentStatusChanged={handleTournamentStatusChanged}
       />
     </>

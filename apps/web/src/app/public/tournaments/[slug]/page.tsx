@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { StatisticsPanel } from '@/components/statistics/statistics-panel';
 import { StatusBadge, StatCard } from '@/components/tournaments/tournament-visuals';
 import type { Match } from '@/services/matches';
 import { getPublicTournamentBySlug } from '@/services/public-tournaments';
+import { buildTournamentStatisticsFromPublicData } from '@/services/statistics';
 
 const formatLabels = {
   LEAGUE: 'Liga',
@@ -49,6 +51,7 @@ export default async function PublicTournamentPage({
   }
 
   const { tournament, participants, matches, standings, champion } = details;
+  const statistics = buildTournamentStatisticsFromPublicData(participants, matches);
   const visibleStandings = standings;
   const shouldShowStandings =
     tournament.format === 'LEAGUE' || tournament.format === 'LEAGUE_KNOCKOUT';
@@ -145,6 +148,8 @@ export default async function PublicTournamentPage({
             Campeonato em andamento.
           </div>
         ) : null}
+
+        <StatisticsPanel statistics={statistics} isPublic />
 
         {shouldShowStandings ? (
           <section className="mt-10 rounded-2xl border border-arena-700 bg-arena-900/80 p-5 sm:p-6">
