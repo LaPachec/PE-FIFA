@@ -29,6 +29,11 @@ export type Match = {
   updatedAt: string;
 };
 
+export type UpdateMatchResultPayload = {
+  homeScore: number;
+  awayScore: number;
+};
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
 
 async function request<TResponse>(
@@ -54,4 +59,11 @@ async function request<TResponse>(
 
 export function getTournamentMatches(tournamentId: string) {
   return request<Match[]>(`/tournaments/${tournamentId}/matches`);
+}
+
+export function updateMatchResult(id: string, payload: UpdateMatchResultPayload) {
+  return request<Match>(`/matches/${id}/result`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
 }

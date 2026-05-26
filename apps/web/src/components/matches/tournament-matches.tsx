@@ -1,14 +1,23 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getTournamentMatches, type Match } from '@/services/matches';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  getTournamentMatches,
+  updateMatchResult,
+  type Match,
+} from '@/services/matches';
 import { getParticipants, type Participant } from '@/services/participants';
 import { startTournament, type TournamentStatus } from '@/services/tournaments';
 
 type TournamentMatchesProps = {
   tournamentId: string;
   tournamentStatus: TournamentStatus;
+};
+
+type ResultFormState = {
+  homeScore: string;
+  awayScore: string;
 };
 
 const phaseLabels: Record<Match['phase'], string> = {
@@ -25,6 +34,23 @@ const statusLabels: Record<Match['status'], string> = {
   FINISHED: 'Finalizada',
 };
 
+const emptyResultForm: ResultFormState = {
+  homeScore: '',
+  awayScore: '',
+};
+
+function getResultFormError(form: ResultFormState) {
+  if (!form.homeScore.trim() || !form.awayScore.trim()) {
+    return 'Informe o placar do mandante e do visitante.';
+  }
+
+  if (!/^\d+$/.test(form.homeScore.trim()) || !/^\d+$/.test(form.awayScore.trim())) {
+    return 'O placar deve ser um numero inteiro maior ou igual a zero.';
+  }
+
+  return null;
+}
+
 export function TournamentMatches({
   tournamentId,
   tournamentStatus,
@@ -35,6 +61,9 @@ export function TournamentMatches({
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
+  const [savingResultMatchId, setSavingResultMatchId] = useState<string | null>(null);
+  const [editingResultMatchId, setEditingResultMatchId] = useState<string | null>(null);
+  const [resultForm, setResultForm] = useState<ResultFormState>(emptyResultForm);
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -50,6 +79,7 @@ export function TournamentMatches({
   }, [participants]);
 
   const canStartTournament = currentStatus === 'DRAFT' && !isStarting;
+  const isSavingResult = savingResultMatchId !== null;
 
   const loadMatches = useCallback(async () => {
     setIsLoading(true);
@@ -63,6 +93,8 @@ export function TournamentMatches({
 
       setMatches(nextMatches);
       setParticipants(nextParticipants);
+      setEditingResultMatchId(null);
+      setResultForm(emptyResultForm);
     } catch (error) {
       setFeedback({
         type: 'error',
@@ -113,6 +145,67 @@ export function TournamentMatches({
     }
 
     return participantNameById.get(participantId) ?? 'Participante removido';
+  }
+
+  function getScoreLabel(match: Match) {
+    if (match.status !== 'FINISHED' || match.homeScore === null || match.awayScore === null) {
+      return 'x';
+    }
+
+    return `${match.homeScore} x ${match.awayScore}`;
+  }
+
+  function startResultEditing(match: Match) {
+    setEditingResultMatchId(match.id);
+    setResultForm({
+      homeScore: match.homeScore === null ? '' : String(match.homeScore),
+      awayScore: match.awayScore === null ? '' : String(match.awayScore),
+    });
+    setFeedback(null);
+  }
+
+  function cancelResultEditing() {
+    setEditingResultMatchId(null);
+    setResultForm(emptyResultForm);
+    setFeedback(null);
+  }
+
+  async function handleSaveResult(event: FormEvent<HTMLFormElement>, matchId: string) {
+    event.preventDefault();
+    setFeedback(null);
+
+    const validationError = getResultFormError(resultForm);
+
+    if (validationError) {
+      setFeedback({ type: 'error', message: validationError });
+      return;
+    }
+
+    setSavingResultMatchId(matchId);
+
+    try {
+      const match = await updateMatchResult(matchId, {
+        homeScore: Number(resultForm.homeScore),
+        awayScore: Number(resultForm.awayScore),
+      });
+
+      setMatches((currentMatches) =>
+        currentMatches.map((currentMatch) =>
+          currentMatch.id === match.id ? match : currentMatch,
+        ),
+      );
+      setEditingResultMatchId(null);
+      setResultForm(emptyResultForm);
+      setFeedback({ type: 'success', message: 'Resultado salvo com sucesso.' });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message:
+          error instanceof Error ? error.message : 'Nao foi possivel salvar o resultado.',
+      });
+    } finally {
+      setSavingResultMatchId(null);
+    }
   }
 
   return (
@@ -171,53 +264,134 @@ export function TournamentMatches({
           </div>
         ) : (
           <div className="grid gap-3">
-            {matches.map((match) => (
-              <div
-                key={match.id}
-                className="grid gap-4 rounded-md border border-white/10 bg-white/5 p-4 lg:grid-cols-[1.4fr_1.4fr_0.8fr_0.7fr_0.8fr] lg:items-center"
-              >
-                <div>
-                  <span className="block text-xs font-semibold uppercase text-slate-500">
-                    Mandante
-                  </span>
-                  <strong className="mt-1 block text-white">
-                    {getParticipantName(match.homeParticipantId)}
-                  </strong>
+            {matches.map((match) => {
+              const isEditingResult = editingResultMatchId === match.id;
+              const resultActionLabel =
+                match.status === 'FINISHED' ? 'Editar resultado' : 'Registrar resultado';
+
+              return (
+                <div
+                  key={match.id}
+                  className="rounded-md border border-white/10 bg-white/5 p-4"
+                >
+                  <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr_1.3fr_0.8fr_0.7fr_0.8fr_auto] lg:items-center">
+                    <div>
+                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                        Mandante
+                      </span>
+                      <strong className="mt-1 block text-white">
+                        {getParticipantName(match.homeParticipantId)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                        Placar
+                      </span>
+                      <strong className="mt-1 block text-white">{getScoreLabel(match)}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                        Visitante
+                      </span>
+                      <strong className="mt-1 block text-white">
+                        {getParticipantName(match.awayParticipantId)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                        Fase
+                      </span>
+                      <span className="mt-1 block text-slate-200">
+                        {phaseLabels[match.phase]}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                        Rodada
+                      </span>
+                      <span className="mt-1 block text-slate-200">
+                        {match.round ?? '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase text-slate-500">
+                        Status
+                      </span>
+                      <span className="mt-1 inline-flex rounded-md border border-white/10 px-2 py-1 text-xs font-bold text-slate-100">
+                        {statusLabels[match.status]}
+                      </span>
+                    </div>
+                    <div className="flex justify-start lg:justify-end">
+                      <button
+                        type="button"
+                        onClick={() => startResultEditing(match)}
+                        disabled={isSavingResult}
+                        className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {resultActionLabel}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isEditingResult ? (
+                    <form
+                      onSubmit={(event) => void handleSaveResult(event, match.id)}
+                      className="mt-4 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-[1fr_1fr_auto]"
+                    >
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        value={resultForm.homeScore}
+                        onChange={(event) =>
+                          setResultForm((current) => ({
+                            ...current,
+                            homeScore: event.target.value,
+                          }))
+                        }
+                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        placeholder="Gols do mandante"
+                        required
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        value={resultForm.awayScore}
+                        onChange={(event) =>
+                          setResultForm((current) => ({
+                            ...current,
+                            awayScore: event.target.value,
+                          }))
+                        }
+                        className="min-w-0 rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white outline-none focus:border-lime-300"
+                        placeholder="Gols do visitante"
+                        required
+                      />
+                      <div className="flex gap-2 sm:justify-end">
+                        <button
+                          type="submit"
+                          disabled={savingResultMatchId === match.id}
+                          className="rounded-md bg-lime-400 px-4 py-2 text-xs font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {savingResultMatchId === match.id ? 'Salvando...' : 'Salvar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelResultEditing}
+                          disabled={savingResultMatchId === match.id}
+                          className="rounded-md border border-white/15 px-4 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  ) : null}
                 </div>
-                <div>
-                  <span className="block text-xs font-semibold uppercase text-slate-500">
-                    Visitante
-                  </span>
-                  <strong className="mt-1 block text-white">
-                    {getParticipantName(match.awayParticipantId)}
-                  </strong>
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold uppercase text-slate-500">
-                    Fase
-                  </span>
-                  <span className="mt-1 block text-slate-200">
-                    {phaseLabels[match.phase]}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold uppercase text-slate-500">
-                    Rodada
-                  </span>
-                  <span className="mt-1 block text-slate-200">
-                    {match.round ?? '-'}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold uppercase text-slate-500">
-                    Status
-                  </span>
-                  <span className="mt-1 inline-flex rounded-md border border-white/10 px-2 py-1 text-xs font-bold text-slate-100">
-                    {statusLabels[match.status]}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
