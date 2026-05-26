@@ -204,3 +204,42 @@ Validacoes e regras:
 - Empates sao permitidos na liga.
 - Ao registrar resultado, a partida fica com `status = FINISHED` e `playedAt` atualizado.
 - Se a partida ja estiver finalizada, o resultado pode ser atualizado.
+
+## Classificacao
+
+### GET /tournaments/:id/standings
+
+Retorna a classificacao calculada dinamicamente para campeonatos de liga.
+
+Regras:
+
+- Retorna `404` se o campeonato nao existir.
+- Retorna `400` se o campeonato nao for do formato `LEAGUE`.
+- Considera apenas partidas com `status = FINISHED`.
+- Participantes sem partidas finalizadas aparecem com todos os numeros zerados.
+- Vitoria vale 3 pontos.
+- Empate vale 1 ponto.
+- Derrota vale 0 pontos.
+- A resposta ja vem ordenada e com `position` calculado.
+
+Resposta:
+
+```json
+[
+  {
+    "position": 1,
+    "participantId": "participant-id",
+    "name": "Lucas",
+    "nickname": "Lukinhas",
+    "teamName": "Real Madrid",
+    "points": 6,
+    "played": 2,
+    "wins": 2,
+    "draws": 0,
+    "losses": 0,
+    "goalsFor": 7,
+    "goalsAgainst": 2,
+    "goalDifference": 5
+  }
+]
+```

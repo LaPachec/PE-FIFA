@@ -71,12 +71,34 @@ Regras:
 9. Partidas finalizadas podem ter o resultado corrigido.
 10. Em empate, `winnerParticipantId` fica `null`.
 11. Quando houver vencedor, `winnerParticipantId` recebe o participante mandante ou visitante conforme o placar.
-12. A classificacao da liga ainda nao e calculada nesta etapa.
+12. O registro de resultado nao persiste classificacao; a tabela e calculada sob demanda.
+
+## Classificacao da liga
+
+A classificacao da liga e calculada dinamicamente a partir das partidas finalizadas.
+
+Regras:
+
+1. O campeonato precisa existir.
+2. O campeonato precisa ser do formato `LEAGUE`.
+3. Apenas partidas com `status = FINISHED` entram no calculo.
+4. Participantes sem partidas finalizadas aparecem com estatisticas zeradas.
+5. Vitoria vale 3 pontos.
+6. Empate vale 1 ponto.
+7. Derrota vale 0 pontos.
+8. A classificacao nao e persistida no banco nesta etapa.
+
+Criterios de ordenacao:
+
+1. Maior numero de pontos.
+2. Maior numero de vitorias.
+3. Maior saldo de gols.
+4. Maior numero de gols marcados.
+5. Nome do participante em ordem alfabetica.
 
 ## Decisoes pendentes
 
-1. Criterios de desempate na liga.
-2. Como montar confrontos automaticamente.
-3. Como tratar partidas de ida e volta.
-4. Como aplicar penaltis em fases eliminatorias.
-5. Como validar quantidade minima e maxima de participantes.
+1. Como aplicar penaltis em fases eliminatorias.
+2. Como validar quantidade minima e maxima de participantes.
+3. Como encerrar automaticamente uma liga.
+4. Como tratar criterios adicionais de desempate, se necessario.
