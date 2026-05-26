@@ -38,5 +38,13 @@ export const updateTournamentSchema = z
   })
   .strict();
 
+export const updateInviteSettingsSchema = z
+  .object({
+    inviteEnabled: z.boolean().optional(),
+    maxParticipants: z.number().int().positive().optional().nullable(),
+  })
+  .strict();
+
 export type CreateTournamentInput = z.infer<typeof createTournamentSchema>;
 export type UpdateTournamentInput = z.infer<typeof updateTournamentSchema>;
+export type UpdateInviteSettingsInput = z.infer<typeof updateInviteSettingsSchema>;

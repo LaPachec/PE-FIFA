@@ -299,28 +299,35 @@ O criador pode compartilhar um link publico para amigos se inscreverem como part
 
 Regras:
 
-1. O convite usa o `slug` publico do campeonato neste MVP.
+1. O convite possui `inviteEnabled`, `inviteCode` e `maxParticipants`.
 2. Dados de convite nao exigem autenticacao.
 3. A inscricao publica nao exige login.
-4. `canJoin` e `true` apenas quando o campeonato esta em `DRAFT`.
+4. `canJoin` e `true` apenas quando o campeonato esta em `DRAFT`, o convite esta ativo e ainda ha vagas.
 5. Inscricoes publicas sao bloqueadas quando o campeonato sai de `DRAFT`.
-6. `name` e obrigatorio.
-7. `nickname` e opcional.
-8. `teamName` e opcional.
-9. Nao pode existir participante com o mesmo `name` dentro do campeonato.
-10. Nao pode existir participante com o mesmo `nickname` dentro do campeonato quando `nickname` for informado.
-11. Participantes inscritos por convite entram com `status = PENDING`.
-12. Participantes `PENDING` precisam ser aprovados pelo dono antes de entrar no campeonato.
-13. Aprovacao e rejeicao so podem acontecer enquanto o campeonato esta em `DRAFT`.
-14. Apenas o dono do campeonato pode aprovar ou rejeitar inscricoes.
-15. Ao aprovar, o participante passa para `ACTIVE`.
-16. Ao rejeitar, o participante passa para `REJECTED`.
-17. Neste MVP, e permitido iniciar um campeonato com inscricoes `PENDING`; elas sao ignoradas e apenas participantes `ACTIVE` entram na geracao de partidas.
-18. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
+6. Inscricoes publicas sao bloqueadas quando `inviteEnabled` e `false`.
+7. Se `maxParticipants` estiver definido, participantes `ACTIVE` e `PENDING` contam para o limite.
+8. Participantes `REJECTED` nao contam para o limite.
+9. O dono pode alterar `inviteEnabled` e `maxParticipants` apenas enquanto o campeonato esta em `DRAFT`.
+10. O dono pode regenerar `inviteCode`.
+11. `maxParticipants` nao pode ser menor que a quantidade atual de participantes `ACTIVE` e `PENDING`.
+12. Para `KNOCKOUT`, `maxParticipants` deve ser `4`, `8` ou `16`.
+13. Para `LEAGUE_KNOCKOUT`, `maxParticipants` nao pode ser menor que `qualifiedCount`.
+14. `name` e obrigatorio.
+15. `nickname` e opcional.
+16. `teamName` e opcional.
+17. Nao pode existir participante com o mesmo `name` dentro do campeonato.
+18. Nao pode existir participante com o mesmo `nickname` dentro do campeonato quando `nickname` for informado.
+19. Participantes inscritos por convite entram com `status = PENDING`.
+20. Participantes `PENDING` precisam ser aprovados pelo dono antes de entrar no campeonato.
+21. Aprovacao e rejeicao so podem acontecer enquanto o campeonato esta em `DRAFT`.
+22. Apenas o dono do campeonato pode aprovar ou rejeitar inscricoes.
+23. Ao aprovar, o participante passa para `ACTIVE`.
+24. Ao rejeitar, o participante passa para `REJECTED`.
+25. Neste MVP, e permitido iniciar um campeonato com inscricoes `PENDING`; elas sao ignoradas e apenas participantes `ACTIVE` entram na geracao de partidas.
+26. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
 
 ## Decisoes pendentes
 
 1. Como aplicar penaltis em fases eliminatorias.
-2. Como validar quantidade minima e maxima de participantes.
-3. Como encerrar automaticamente uma liga.
-4. Como tratar criterios adicionais de desempate, se necessario.
+2. Como encerrar automaticamente uma liga.
+3. Como tratar criterios adicionais de desempate, se necessario.

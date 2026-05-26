@@ -59,11 +59,14 @@ model Tournament {
   ownerId               String
   name                  String
   slug                  String           @unique
+  inviteCode            String?          @unique
   description           String?
   format                TournamentFormat
   status                TournamentStatus @default(DRAFT)
   isTwoLegged           Boolean          @default(false)
   qualifiedCount        Int?
+  maxParticipants       Int?
+  inviteEnabled         Boolean          @default(true)
   hasThirdPlaceMatch    Boolean          @default(false)
   championParticipantId String?
   createdAt             DateTime         @default(now())

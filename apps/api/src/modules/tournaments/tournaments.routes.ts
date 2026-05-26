@@ -49,6 +49,14 @@ tournamentsRouter.post(
   requireTournamentOwner('id'),
   asyncHandler(tournamentsController.generateKnockoutStage),
 );
+tournamentsRouter.patch(
+  '/:id/invite-settings',
+  asyncHandler(tournamentsController.updateInviteSettings),
+);
+tournamentsRouter.post(
+  '/:id/regenerate-invite-code',
+  asyncHandler(tournamentsController.regenerateInviteCode),
+);
 tournamentsRouter.get('/:id', requireTournamentOwner('id'), asyncHandler(tournamentsController.findById));
 tournamentsRouter.patch('/:id', requireTournamentOwner('id'), asyncHandler(tournamentsController.update));
 tournamentsRouter.delete('/:id', requireTournamentOwner('id'), asyncHandler(tournamentsController.delete));

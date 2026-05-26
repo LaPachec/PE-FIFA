@@ -119,7 +119,9 @@ Regras:
 - Nao exige autenticacao.
 - Retorna `404` se o campeonato nao existir.
 - Nao retorna dados sensiveis do usuario dono.
-- `canJoin` e `true` apenas quando o campeonato esta em `DRAFT`.
+- `canJoin` e `true` apenas quando o campeonato esta em `DRAFT`, o convite esta ativo e ainda ha vagas.
+- `currentParticipants` considera participantes `ACTIVE` e `PENDING`.
+- `remainingSlots` retorna `null` quando nao ha limite configurado.
 
 Resposta:
 
@@ -128,9 +130,14 @@ Resposta:
   "id": "tournament-id",
   "name": "Copa dos Amigos",
   "slug": "copa-dos-amigos",
+  "inviteCode": "a1b2c3d4e5f6",
   "description": "Campeonato local",
   "format": "LEAGUE",
   "status": "DRAFT",
+  "inviteEnabled": true,
+  "maxParticipants": 8,
+  "currentParticipants": 4,
+  "remainingSlots": 4,
   "totalParticipants": 4,
   "canJoin": true
 }
@@ -155,6 +162,8 @@ Regras:
 - Nao exige autenticacao.
 - Retorna `404` se o campeonato nao existir.
 - Retorna `409` se o campeonato nao estiver em `DRAFT`.
+- Retorna `409` se o convite estiver desativado.
+- Retorna `409` se o limite de participantes tiver sido atingido.
 - `name` e obrigatorio.
 - `nickname` e opcional.
 - `teamName` e opcional.
@@ -285,6 +294,42 @@ Atualiza dados basicos de um campeonato.
 Regras:
 
 - O campeonato precisa pertencer ao usuario autenticado.
+
+### PATCH /tournaments/:id/invite-settings
+
+Atualiza as configuracoes do convite publico de um campeonato.
+
+Body:
+
+```json
+{
+  "inviteEnabled": true,
+  "maxParticipants": 8
+}
+```
+
+Regras:
+
+- Exige usuario autenticado.
+- O campeonato precisa pertencer ao usuario autenticado.
+- Retorna `404` se o campeonato nao existir ou nao pertencer ao usuario.
+- Retorna `409` se o campeonato nao estiver em `DRAFT`.
+- `maxParticipants` e opcional e pode ser `null`.
+- `maxParticipants`, quando informado, precisa ser inteiro positivo.
+- `maxParticipants` nao pode ser menor que a quantidade atual de participantes `ACTIVE` e `PENDING`.
+- Para `KNOCKOUT`, `maxParticipants` deve ser `4`, `8` ou `16`.
+- Para `LEAGUE_KNOCKOUT`, `maxParticipants` nao pode ser menor que `qualifiedCount`.
+
+### POST /tournaments/:id/regenerate-invite-code
+
+Regenera o codigo publico de convite do campeonato.
+
+Regras:
+
+- Exige usuario autenticado.
+- O campeonato precisa pertencer ao usuario autenticado.
+- Retorna `404` se o campeonato nao existir ou nao pertencer ao usuario.
+- Gera um novo `inviteCode` unico.
 
 ### DELETE /tournaments/:id
 

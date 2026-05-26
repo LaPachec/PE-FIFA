@@ -89,19 +89,24 @@ export const publicTournamentsService = {
   },
 
   async getInvite(slug: string) {
-    const tournament = await prisma.tournament.findUnique({
-      where: { slug },
+    const tournament = await prisma.tournament.findFirst({
+      where: {
+        OR: [{ slug }, { inviteCode: slug }],
+      },
       select: {
         id: true,
         name: true,
         slug: true,
+        inviteCode: true,
         description: true,
         format: true,
         status: true,
+        inviteEnabled: true,
+        maxParticipants: true,
         _count: {
           select: {
             participants: {
-              where: { status: 'ACTIVE' },
+              where: { status: { in: ['ACTIVE', 'PENDING'] } },
             },
           },
         },
@@ -112,26 +117,70 @@ export const publicTournamentsService = {
       throw new AppError('Tournament not found', 404);
     }
 
+    const currentParticipants = tournament._count.participants;
+    const remainingSlots =
+      tournament.maxParticipants === null
+        ? null
+        : Math.max(tournament.maxParticipants - currentParticipants, 0);
+    const hasAvailableSlot =
+      tournament.maxParticipants === null || currentParticipants < tournament.maxParticipants;
+    const canJoin =
+      tournament.status === 'DRAFT' && tournament.inviteEnabled && hasAvailableSlot;
+
     return {
       id: tournament.id,
       name: tournament.name,
       slug: tournament.slug,
+      inviteCode: tournament.inviteCode,
       description: tournament.description,
       format: tournament.format,
       status: tournament.status,
-      totalParticipants: tournament._count.participants,
-      canJoin: tournament.status === 'DRAFT',
+      inviteEnabled: tournament.inviteEnabled,
+      maxParticipants: tournament.maxParticipants,
+      currentParticipants,
+      remainingSlots,
+      totalParticipants: currentParticipants,
+      canJoin,
     };
   },
 
   async join(slug: string, input: CreateParticipantInput) {
-    const tournament = await prisma.tournament.findUnique({
-      where: { slug },
-      select: { id: true },
+    const tournament = await prisma.tournament.findFirst({
+      where: {
+        OR: [{ slug }, { inviteCode: slug }],
+      },
+      select: {
+        id: true,
+        status: true,
+        inviteEnabled: true,
+        maxParticipants: true,
+        _count: {
+          select: {
+            participants: {
+              where: { status: { in: ['ACTIVE', 'PENDING'] } },
+            },
+          },
+        },
+      },
     });
 
     if (!tournament) {
       throw new AppError('Tournament not found', 404);
+    }
+
+    if (tournament.status !== 'DRAFT') {
+      throw new AppError('Tournament registrations are closed', 409);
+    }
+
+    if (!tournament.inviteEnabled) {
+      throw new AppError('Tournament invite is disabled', 409);
+    }
+
+    if (
+      tournament.maxParticipants !== null &&
+      tournament._count.participants >= tournament.maxParticipants
+    ) {
+      throw new AppError('Tournament participant limit has been reached', 409);
     }
 
     return participantsService.createPending(tournament.id, input);

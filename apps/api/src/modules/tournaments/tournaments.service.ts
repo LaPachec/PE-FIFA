@@ -1,8 +1,10 @@
+import { randomBytes } from 'node:crypto';
 import { prisma, type MatchPhase, type TournamentFormat } from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
 import { calculateLeagueStandings } from '../standings/standings.service.js';
 import type {
   CreateTournamentInput,
+  UpdateInviteSettingsInput,
   UpdateTournamentInput,
 } from './tournaments.schemas.js';
 
@@ -29,6 +31,21 @@ async function createUniqueSlug(name: string) {
   return slug;
 }
 
+async function createUniqueInviteCode() {
+  let inviteCode = randomBytes(6).toString('hex');
+
+  while (
+    await prisma.tournament.findUnique({
+      where: { inviteCode },
+      select: { id: true },
+    })
+  ) {
+    inviteCode = randomBytes(6).toString('hex');
+  }
+
+  return inviteCode;
+}
+
 function assertQualifiedCount(format: TournamentFormat, qualifiedCount?: number | null) {
   if (format === 'LEAGUE_KNOCKOUT' && !qualifiedCount) {
     throw new AppError('qualifiedCount is required for LEAGUE_KNOCKOUT tournaments', 400);
@@ -49,6 +66,36 @@ function assertLeagueKnockoutStartRules(
 
   if (qualifiedCount > participantsCount) {
     throw new AppError('qualifiedCount cannot be greater than participants count', 400);
+  }
+}
+
+function assertMaxParticipantsRules(input: {
+  format: TournamentFormat;
+  qualifiedCount: number | null;
+  maxParticipants: number | null | undefined;
+  currentJoinableParticipants: number;
+}) {
+  if (input.maxParticipants === null || input.maxParticipants === undefined) {
+    return;
+  }
+
+  if (input.maxParticipants < input.currentJoinableParticipants) {
+    throw new AppError(
+      'maxParticipants cannot be lower than current active and pending participants count',
+      400,
+    );
+  }
+
+  if (input.format === 'KNOCKOUT' && ![4, 8, 16].includes(input.maxParticipants)) {
+    throw new AppError('maxParticipants for KNOCKOUT tournaments must be 4, 8 or 16', 400);
+  }
+
+  if (
+    input.format === 'LEAGUE_KNOCKOUT' &&
+    input.qualifiedCount &&
+    input.maxParticipants < input.qualifiedCount
+  ) {
+    throw new AppError('maxParticipants cannot be lower than qualifiedCount', 400);
   }
 }
 
@@ -213,12 +260,14 @@ function createLeagueKnockoutStageMatches(
 export const tournamentsService = {
   async create(input: CreateTournamentInput, ownerId: string) {
     const slug = await createUniqueSlug(input.name);
+    const inviteCode = await createUniqueInviteCode();
 
     return prisma.tournament.create({
       data: {
         ownerId,
         name: input.name,
         slug,
+        inviteCode,
         description: input.description || null,
         format: input.format,
         status: 'DRAFT',
@@ -282,6 +331,79 @@ export const tournamentsService = {
 
     await prisma.tournament.delete({
       where: { id },
+    });
+  },
+
+  async updateInviteSettings(
+    id: string,
+    input: UpdateInviteSettingsInput,
+    ownerId: string,
+  ) {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            participants: {
+              where: { status: { in: ['ACTIVE', 'PENDING'] } },
+            },
+          },
+        },
+      },
+    });
+
+    if (!tournament) {
+      throw new AppError('Tournament not found', 404);
+    }
+
+    if (tournament.ownerId !== ownerId) {
+      throw new AppError('You do not have permission to manage this tournament', 403);
+    }
+
+    if (tournament.status !== 'DRAFT') {
+      throw new AppError('Invite settings can only be changed while tournament is in DRAFT status', 409);
+    }
+
+    const nextMaxParticipants =
+      input.maxParticipants !== undefined
+        ? input.maxParticipants
+        : tournament.maxParticipants;
+
+    assertMaxParticipantsRules({
+      format: tournament.format,
+      qualifiedCount: tournament.qualifiedCount,
+      maxParticipants: nextMaxParticipants,
+      currentJoinableParticipants: tournament._count.participants,
+    });
+
+    return prisma.tournament.update({
+      where: { id },
+      data: {
+        inviteEnabled: input.inviteEnabled,
+        maxParticipants: input.maxParticipants,
+      },
+    });
+  },
+
+  async regenerateInviteCode(id: string, ownerId: string) {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id },
+      select: { ownerId: true },
+    });
+
+    if (!tournament) {
+      throw new AppError('Tournament not found', 404);
+    }
+
+    if (tournament.ownerId !== ownerId) {
+      throw new AppError('You do not have permission to manage this tournament', 403);
+    }
+
+    const inviteCode = await createUniqueInviteCode();
+
+    return prisma.tournament.update({
+      where: { id },
+      data: { inviteCode },
     });
   },
 

@@ -4,6 +4,7 @@ import { AppError } from '../../shared/errors/app-error.js';
 import { getAuthenticatedUserId } from '../../shared/middlewares/require-auth.js';
 import {
   createTournamentSchema,
+  updateInviteSettingsSchema,
   updateTournamentSchema,
 } from './tournaments.schemas.js';
 import { tournamentsService } from './tournaments.service.js';
@@ -98,6 +99,30 @@ export const tournamentsController = {
 
   async generateKnockoutStage(request: Request, response: Response) {
     const tournament = await tournamentsService.generateKnockoutStage(
+      getTournamentId(request),
+      getAuthenticatedUserId(request),
+    );
+
+    response.status(200).json(tournament);
+  },
+
+  async updateInviteSettings(request: Request, response: Response) {
+    try {
+      const input = updateInviteSettingsSchema.parse(request.body);
+      const tournament = await tournamentsService.updateInviteSettings(
+        getTournamentId(request),
+        input,
+        getAuthenticatedUserId(request),
+      );
+
+      response.status(200).json(tournament);
+    } catch (error) {
+      parseValidationError(error);
+    }
+  },
+
+  async regenerateInviteCode(request: Request, response: Response) {
+    const tournament = await tournamentsService.regenerateInviteCode(
       getTournamentId(request),
       getAuthenticatedUserId(request),
     );
