@@ -3,6 +3,7 @@ import type { StandingRow } from '@/services/standings';
 type StandingsTableProps = {
   standings: StandingRow[];
   championParticipantId?: string;
+  qualifiedCount?: number | null;
 };
 
 const columns = [
@@ -22,6 +23,7 @@ const columns = [
 export function StandingsTable({
   standings,
   championParticipantId,
+  qualifiedCount,
 }: StandingsTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-arena-700 bg-arena-850">
@@ -38,11 +40,15 @@ export function StandingsTable({
         <tbody className="divide-y divide-arena-700">
           {standings.map((standing) => {
             const isChampion = standing.participantId === championParticipantId;
+            const isQualified =
+              qualifiedCount !== null &&
+              qualifiedCount !== undefined &&
+              standing.position <= qualifiedCount;
 
             return (
               <tr
                 key={standing.participantId}
-                className={isChampion ? 'bg-gold-500/10' : 'bg-arena-850'}
+                className={isChampion || isQualified ? 'bg-gold-500/10' : 'bg-arena-850'}
               >
               <td className={`px-3 py-3 font-bold ${isChampion ? 'text-gold-400' : 'text-white'}`}>
                 {standing.position}
@@ -53,6 +59,11 @@ export function StandingsTable({
                   {isChampion ? (
                     <span className="ml-2 rounded-full border border-gold-500/40 px-2 py-0.5 text-xs text-gold-400">
                       Campeao
+                    </span>
+                  ) : null}
+                  {!isChampion && isQualified ? (
+                    <span className="ml-2 rounded-full border border-gold-500/30 px-2 py-0.5 text-xs text-gold-400">
+                      Classificado
                     </span>
                   ) : null}
                 </span>

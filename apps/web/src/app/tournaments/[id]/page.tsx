@@ -74,6 +74,7 @@ export default async function TournamentDetailsPage({
           tournamentId={tournament.id}
           tournamentFormat={tournament.format}
           tournamentStatus={tournament.status}
+          qualifiedCount={tournament.qualifiedCount}
           championParticipantId={tournament.championParticipantId}
         />
       </section>

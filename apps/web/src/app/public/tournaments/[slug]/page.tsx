@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { StatusBadge, StatCard } from '@/components/tournaments/tournament-visuals';
 import type { Match } from '@/services/matches';
 import { getPublicTournamentBySlug } from '@/services/public-tournaments';
+import { getTournamentStandings } from '@/services/standings';
 
 const formatLabels = {
   LEAGUE: 'Liga',
@@ -49,6 +50,12 @@ export default async function PublicTournamentPage({
   }
 
   const { tournament, participants, matches, standings, champion } = details;
+  const visibleStandings =
+    tournament.format === 'LEAGUE_KNOCKOUT'
+      ? await getTournamentStandings(tournament.id).catch(() => standings)
+      : standings;
+  const shouldShowStandings =
+    tournament.format === 'LEAGUE' || tournament.format === 'LEAGUE_KNOCKOUT';
   const matchGroups = Array.from(
     matches.reduce((groups, match) => {
       const currentGroup = groups.get(match.phase) ?? [];
@@ -128,6 +135,9 @@ export default async function PublicTournamentPage({
           <StatCard label="Formato" value={formatLabels[tournament.format]} />
           <StatCard label="Participantes" value={participants.length} />
           <StatCard label="Partidas" value={matches.length} />
+          {tournament.format === 'LEAGUE_KNOCKOUT' ? (
+            <StatCard label="Classificados" value={tournament.qualifiedCount ?? '-'} />
+          ) : null}
           <StatCard
             label="Atualizado em"
             value={new Intl.DateTimeFormat('pt-BR').format(new Date(tournament.updatedAt))}
@@ -140,11 +150,11 @@ export default async function PublicTournamentPage({
           </div>
         ) : null}
 
-        {tournament.format === 'LEAGUE' ? (
+        {shouldShowStandings ? (
           <section className="mt-10 rounded-2xl border border-arena-700 bg-arena-900/80 p-5 sm:p-6">
             <h2 className="text-2xl font-bold text-white">Classificacao</h2>
             <div className="mt-6 overflow-x-auto rounded-xl border border-arena-700 bg-arena-850">
-              {standings.length === 0 ? (
+              {visibleStandings.length === 0 ? (
                 <div className="p-8 text-center text-sm text-zinc-400">
                   Nenhum participante cadastrado ainda.
                 </div>
@@ -166,18 +176,34 @@ export default async function PublicTournamentPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-arena-700">
-                    {standings.map((standing) => {
+                    {visibleStandings.map((standing) => {
                       const isChampion = standing.participantId === champion?.id;
+                      const isQualified =
+                        tournament.format === 'LEAGUE_KNOCKOUT' &&
+                        tournament.qualifiedCount !== null &&
+                        standing.position <= tournament.qualifiedCount;
 
                       return (
                         <tr
                           key={standing.participantId}
-                          className={isChampion ? 'bg-gold-500/10' : 'bg-arena-850'}
+                          className={isChampion || isQualified ? 'bg-gold-500/10' : 'bg-arena-850'}
                         >
                           <td className={`px-3 py-3 font-bold ${isChampion ? 'text-gold-400' : 'text-white'}`}>
                             {standing.position}
                           </td>
-                          <td className="px-3 py-3 font-semibold text-white">{standing.name}</td>
+                          <td className="px-3 py-3 font-semibold text-white">
+                            {standing.name}
+                            {isChampion ? (
+                              <span className="ml-2 rounded-full border border-gold-500/40 px-2 py-0.5 text-xs text-gold-400">
+                                Campeao
+                              </span>
+                            ) : null}
+                            {!isChampion && isQualified ? (
+                              <span className="ml-2 rounded-full border border-gold-500/30 px-2 py-0.5 text-xs text-gold-400">
+                                Classificado
+                              </span>
+                            ) : null}
+                          </td>
                           <td className="px-3 py-3 text-zinc-300">{standing.teamName ?? '-'}</td>
                           <td className="px-3 py-3 text-right font-bold text-gold-400">
                             {standing.points}
@@ -213,13 +239,20 @@ export default async function PublicTournamentPage({
                 {matchGroups.map((group) => (
                   <div key={group.phase} className="grid gap-3">
                     <div className="flex items-center justify-between gap-3">
-                      <h3
-                        className={`text-sm font-bold uppercase tracking-[0.18em] ${
-                          group.phase === 'FINAL' ? 'text-gold-400' : 'text-zinc-400'
-                        }`}
-                      >
-                        {phaseLabels[group.phase]}
-                      </h3>
+                      <div>
+                        {tournament.format === 'LEAGUE_KNOCKOUT' ? (
+                          <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                            {group.phase === 'LEAGUE' ? 'Fase de Liga' : 'Mata-mata'}
+                          </span>
+                        ) : null}
+                        <h3
+                          className={`text-sm font-bold uppercase tracking-[0.18em] ${
+                            group.phase === 'FINAL' ? 'text-gold-400' : 'text-zinc-400'
+                          }`}
+                        >
+                          {phaseLabels[group.phase]}
+                        </h3>
+                      </div>
                       <span className="text-xs font-semibold text-zinc-500">
                         {group.matches.length} jogo{group.matches.length === 1 ? '' : 's'}
                       </span>

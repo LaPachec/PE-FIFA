@@ -13,6 +13,7 @@ type TournamentLeaguePanelProps = {
   tournamentId: string;
   tournamentFormat: TournamentFormat;
   tournamentStatus: TournamentStatus;
+  qualifiedCount: number | null;
   championParticipantId: string | null;
 };
 
@@ -20,6 +21,7 @@ export function TournamentLeaguePanel({
   tournamentId,
   tournamentFormat,
   tournamentStatus,
+  qualifiedCount,
   championParticipantId,
 }: TournamentLeaguePanelProps) {
   const [standingsRefreshKey, setStandingsRefreshKey] = useState(0);
@@ -36,10 +38,12 @@ export function TournamentLeaguePanel({
 
   return (
     <>
-      {tournamentFormat === 'LEAGUE' ? (
+      {tournamentFormat === 'LEAGUE' || tournamentFormat === 'LEAGUE_KNOCKOUT' ? (
         <StandingsSection
           tournamentId={tournamentId}
+          tournamentFormat={tournamentFormat}
           tournamentStatus={currentStatus}
+          qualifiedCount={qualifiedCount}
           refreshKey={standingsRefreshKey}
         />
       ) : null}
@@ -47,6 +51,7 @@ export function TournamentLeaguePanel({
         tournamentId={tournamentId}
         tournamentFormat={tournamentFormat}
         tournamentStatus={currentStatus}
+        qualifiedCount={qualifiedCount}
         championParticipantId={championParticipantId}
         onMatchesChanged={refreshStandings}
         onTournamentStatusChanged={handleTournamentStatusChanged}

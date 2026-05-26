@@ -10,6 +10,7 @@ import {
 import { getParticipants, type Participant } from '@/services/participants';
 import {
   finishTournament,
+  generateKnockoutStage,
   startTournament,
   type Tournament,
   type TournamentFormat,
@@ -21,6 +22,7 @@ type TournamentMatchesProps = {
   tournamentId: string;
   tournamentFormat: TournamentFormat;
   tournamentStatus: TournamentStatus;
+  qualifiedCount: number | null;
   championParticipantId: string | null;
   onMatchesChanged?: () => void;
   onTournamentStatusChanged?: (tournament: Tournament) => void;
@@ -86,6 +88,7 @@ export function TournamentMatches({
   tournamentId,
   tournamentFormat,
   tournamentStatus,
+  qualifiedCount,
   championParticipantId,
   onMatchesChanged,
   onTournamentStatusChanged,
@@ -100,6 +103,7 @@ export function TournamentMatches({
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [isGeneratingKnockoutStage, setIsGeneratingKnockoutStage] = useState(false);
   const [savingResultMatchId, setSavingResultMatchId] = useState<string | null>(null);
   const [editingResultMatchId, setEditingResultMatchId] = useState<string | null>(null);
   const [resultForm, setResultForm] = useState<ResultFormState>(emptyResultForm);
@@ -151,7 +155,17 @@ export function TournamentMatches({
   }, [matches]);
 
   const canStartTournament = currentStatus === 'DRAFT' && !isStarting;
+  const leagueMatches = matches.filter((match) => match.phase === 'LEAGUE');
+  const knockoutMatches = matches.filter((match) => match.phase !== 'LEAGUE');
   const hasPendingMatches = matches.some((match) => match.status === 'PENDING');
+  const hasPendingLeagueMatches = leagueMatches.some((match) => match.status === 'PENDING');
+  const canGenerateKnockoutStage =
+    tournamentFormat === 'LEAGUE_KNOCKOUT' &&
+    currentStatus === 'IN_PROGRESS' &&
+    leagueMatches.length > 0 &&
+    !hasPendingLeagueMatches &&
+    knockoutMatches.length === 0 &&
+    !isGeneratingKnockoutStage;
   const canFinishTournament =
     tournamentFormat === 'LEAGUE' &&
     currentStatus === 'IN_PROGRESS' &&
@@ -256,6 +270,31 @@ export function TournamentMatches({
     }
   }
 
+  async function handleGenerateKnockoutStage() {
+    setIsGeneratingKnockoutStage(true);
+    setFeedback(null);
+
+    try {
+      const tournament = await generateKnockoutStage(tournamentId);
+      setCurrentStatus(tournament.status);
+      await loadMatches();
+      onMatchesChanged?.();
+      onTournamentStatusChanged?.(tournament);
+      router.refresh();
+      setFeedback({ type: 'success', message: 'Fase mata-mata gerada com sucesso.' });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Nao foi possivel gerar a fase mata-mata.',
+      });
+    } finally {
+      setIsGeneratingKnockoutStage(false);
+    }
+  }
+
   function getParticipantName(participantId: string | null) {
     if (!participantId) {
       return 'A definir';
@@ -287,6 +326,22 @@ export function TournamentMatches({
     setFeedback(null);
   }
 
+  function canEditMatchResult(match: Match) {
+    if (currentStatus === 'FINISHED') {
+      return false;
+    }
+
+    if (
+      tournamentFormat === 'LEAGUE_KNOCKOUT' &&
+      currentStatus === 'KNOCKOUT_STAGE' &&
+      match.phase === 'LEAGUE'
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
   async function handleSaveResult(event: FormEvent<HTMLFormElement>, matchId: string) {
     event.preventDefault();
     setFeedback(null);
@@ -313,7 +368,11 @@ export function TournamentMatches({
         awayScore: Number(resultForm.awayScore),
       });
 
-      if (tournamentFormat === 'KNOCKOUT' && match.phase === 'FINAL' && match.winnerParticipantId) {
+      if (
+        (tournamentFormat === 'KNOCKOUT' || tournamentFormat === 'LEAGUE_KNOCKOUT') &&
+        match.phase === 'FINAL' &&
+        match.winnerParticipantId
+      ) {
         setCurrentStatus('FINISHED');
         setCurrentChampionParticipantId(match.winnerParticipantId);
       }
@@ -341,6 +400,8 @@ export function TournamentMatches({
       description={
         tournamentFormat === 'KNOCKOUT'
           ? 'Inicie o campeonato para gerar a primeira fase do mata-mata.'
+          : tournamentFormat === 'LEAGUE_KNOCKOUT'
+            ? 'Inicie a Liga e gere o mata-mata quando todos os jogos da fase inicial terminarem.'
           : 'Inicie o campeonato para gerar a tabela de jogos da liga.'
       }
       action={
@@ -367,10 +428,21 @@ export function TournamentMatches({
             </button>
           ) : null}
 
+          {tournamentFormat === 'LEAGUE_KNOCKOUT' && currentStatus === 'IN_PROGRESS' ? (
+            <button
+              type="button"
+              onClick={() => void handleGenerateKnockoutStage()}
+              disabled={!canGenerateKnockoutStage}
+              className="rounded-xl bg-gold-500 px-4 py-2 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isGeneratingKnockoutStage ? 'Gerando...' : 'Gerar fase mata-mata'}
+            </button>
+          ) : null}
+
           <button
             type="button"
             onClick={() => void loadMatches()}
-            disabled={isLoading || isStarting || isFinishing}
+            disabled={isLoading || isStarting || isFinishing || isGeneratingKnockoutStage}
             className="rounded-xl border border-arena-700 px-4 py-2 text-sm font-semibold text-white transition hover:border-gold-500 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Atualizar
@@ -385,16 +457,26 @@ export function TournamentMatches({
         </div>
       ) : null}
 
+      {tournamentFormat === 'LEAGUE_KNOCKOUT' && currentStatus === 'IN_PROGRESS' ? (
+        <div className="rounded-xl border border-gold-700/40 bg-gold-700/10 px-4 py-3 text-sm text-gold-400">
+          {hasPendingLeagueMatches
+            ? 'Finalize todas as partidas da Liga antes de gerar o mata-mata.'
+            : `A Liga terminou. Gere a fase mata-mata com ${qualifiedCount ?? '-'} classificados.`}
+        </div>
+      ) : null}
+
       {tournamentFormat === 'KNOCKOUT' && currentStatus === 'DRAFT' ? (
         <div className="mt-5 rounded-xl border border-gold-700/40 bg-gold-700/10 px-4 py-3 text-sm text-gold-400">
           Campeonatos mata-mata exigem exatamente 4, 8 ou 16 participantes.
         </div>
       ) : null}
 
-      {tournamentFormat === 'KNOCKOUT' && currentStatus === 'FINISHED' && championParticipant ? (
+      {(tournamentFormat === 'KNOCKOUT' || tournamentFormat === 'LEAGUE_KNOCKOUT') &&
+      currentStatus === 'FINISHED' &&
+      championParticipant ? (
         <div className="mt-5 rounded-2xl border border-gold-500/40 bg-gold-500/10 p-5">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-400">
-            Campeao do mata-mata
+            Campeao
           </span>
           <strong className="mt-2 block text-2xl text-white">{championParticipant.name}</strong>
           <span className="mt-1 block text-sm text-zinc-400">
@@ -425,17 +507,24 @@ export function TournamentMatches({
             Nenhuma partida gerada ainda.
           </div>
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-8">
             {matchGroups.map((group) => (
               <div key={group.phase} className="grid gap-3">
                 <div className="flex items-center justify-between gap-3">
-                  <h3
-                    className={`text-sm font-bold uppercase tracking-[0.18em] ${
-                      group.phase === 'FINAL' ? 'text-gold-400' : 'text-zinc-400'
-                    }`}
-                  >
-                    {phaseLabels[group.phase]}
-                  </h3>
+                  <div>
+                    {tournamentFormat === 'LEAGUE_KNOCKOUT' ? (
+                      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                        {group.phase === 'LEAGUE' ? 'Fase de Liga' : 'Mata-mata'}
+                      </span>
+                    ) : null}
+                    <h3
+                      className={`text-sm font-bold uppercase tracking-[0.18em] ${
+                        group.phase === 'FINAL' ? 'text-gold-400' : 'text-zinc-400'
+                      }`}
+                    >
+                      {phaseLabels[group.phase]}
+                    </h3>
+                  </div>
                   <span className="text-xs font-semibold text-zinc-500">
                     {group.matches.length} jogo{group.matches.length === 1 ? '' : 's'}
                   </span>
@@ -504,7 +593,7 @@ export function TournamentMatches({
                           </span>
                         </div>
                         <div className="flex justify-start lg:justify-end">
-                          {currentStatus !== 'FINISHED' ? (
+                          {canEditMatchResult(match) ? (
                             <button
                               type="button"
                               onClick={() => startResultEditing(match)}
@@ -514,7 +603,9 @@ export function TournamentMatches({
                               {resultActionLabel}
                             </button>
                           ) : (
-                            <span className="text-xs text-zinc-500">Encerrado</span>
+                            <span className="text-xs text-zinc-500">
+                              {currentStatus === 'FINISHED' ? 'Encerrado' : 'Somente leitura'}
+                            </span>
                           )}
                         </div>
                       </div>

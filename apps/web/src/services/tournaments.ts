@@ -75,3 +75,9 @@ export function finishTournament(id: string) {
     method: 'POST',
   });
 }
+
+export function generateKnockoutStage(id: string) {
+  return request<Tournament>(`/tournaments/${id}/generate-knockout-stage`, {
+    method: 'POST',
+  });
+}

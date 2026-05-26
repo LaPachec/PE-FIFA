@@ -7,23 +7,28 @@ import {
   type StandingRow,
 } from '@/services/standings';
 import { SectionShell } from '@/components/tournaments/tournament-visuals';
-import type { TournamentStatus } from '@/services/tournaments';
+import type { TournamentFormat, TournamentStatus } from '@/services/tournaments';
 
 type StandingsSectionProps = {
   tournamentId: string;
+  tournamentFormat: TournamentFormat;
   tournamentStatus: TournamentStatus;
+  qualifiedCount: number | null;
   refreshKey: number;
 };
 
 export function StandingsSection({
   tournamentId,
+  tournamentFormat,
   tournamentStatus,
+  qualifiedCount,
   refreshKey,
 }: StandingsSectionProps) {
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const champion = tournamentStatus === 'FINISHED' ? standings[0] : null;
+  const champion =
+    tournamentFormat === 'LEAGUE' && tournamentStatus === 'FINISHED' ? standings[0] : null;
 
   const loadStandings = useCallback(async () => {
     setIsLoading(true);
@@ -50,7 +55,11 @@ export function StandingsSection({
   return (
     <SectionShell
       title="Classificacao"
-      description="Tabela calculada pela API a partir das partidas finalizadas."
+      description={
+        tournamentFormat === 'LEAGUE_KNOCKOUT'
+          ? 'Tabela final da fase de Liga. Os melhores colocados avancam para o mata-mata.'
+          : 'Tabela calculada pela API a partir das partidas finalizadas.'
+      }
       action={
         <button
           type="button"
@@ -87,7 +96,11 @@ export function StandingsSection({
                 </p>
               </div>
             ) : null}
-            <StandingsTable standings={standings} championParticipantId={champion?.participantId} />
+            <StandingsTable
+              standings={standings}
+              championParticipantId={champion?.participantId}
+              qualifiedCount={tournamentFormat === 'LEAGUE_KNOCKOUT' ? qualifiedCount : null}
+            />
           </>
         )}
     </SectionShell>
