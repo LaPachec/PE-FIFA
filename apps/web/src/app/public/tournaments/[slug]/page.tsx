@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { StatusBadge, StatCard } from '@/components/tournaments/tournament-visuals';
 import type { Match } from '@/services/matches';
 import { getPublicTournamentBySlug } from '@/services/public-tournaments';
-import { getTournamentStandings } from '@/services/standings';
 
 const formatLabels = {
   LEAGUE: 'Liga',
@@ -50,10 +49,7 @@ export default async function PublicTournamentPage({
   }
 
   const { tournament, participants, matches, standings, champion } = details;
-  const visibleStandings =
-    tournament.format === 'LEAGUE_KNOCKOUT'
-      ? await getTournamentStandings(tournament.id).catch(() => standings)
-      : standings;
+  const visibleStandings = standings;
   const shouldShowStandings =
     tournament.format === 'LEAGUE' || tournament.format === 'LEAGUE_KNOCKOUT';
   const matchGroups = Array.from(

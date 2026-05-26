@@ -66,7 +66,7 @@ export function CreateTournamentForm() {
           id="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="rounded-md border border-white/10 bg-white/10 px-4 py-3 text-white outline-none transition focus:border-lime-300"
+          className="rounded-xl border border-arena-700 bg-arena-950 px-4 py-3 text-white outline-none transition focus:border-gold-500"
           placeholder="Copa dos Amigos"
           required
         />
@@ -80,7 +80,7 @@ export function CreateTournamentForm() {
           id="description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
-          className="min-h-28 rounded-md border border-white/10 bg-white/10 px-4 py-3 text-white outline-none transition focus:border-lime-300"
+          className="min-h-28 rounded-xl border border-arena-700 bg-arena-950 px-4 py-3 text-white outline-none transition focus:border-gold-500"
           placeholder="Campeonato local entre amigos."
         />
       </div>
@@ -93,7 +93,7 @@ export function CreateTournamentForm() {
           id="format"
           value={format}
           onChange={(event) => setFormat(event.target.value as TournamentFormat)}
-          className="rounded-md border border-white/10 bg-pitch-900 px-4 py-3 text-white outline-none transition focus:border-lime-300"
+          className="rounded-xl border border-arena-700 bg-arena-950 px-4 py-3 text-white outline-none transition focus:border-gold-500"
         >
           {formatOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -112,7 +112,7 @@ export function CreateTournamentForm() {
             id="qualifiedCount"
             value={qualifiedCount}
             onChange={(event) => setQualifiedCount(event.target.value)}
-            className="rounded-md border border-white/10 bg-pitch-900 px-4 py-3 text-white outline-none transition focus:border-lime-300"
+            className="rounded-xl border border-arena-700 bg-arena-950 px-4 py-3 text-white outline-none transition focus:border-gold-500"
           >
             {qualifiedOptions.map((option) => (
               <option key={option} value={option}>
@@ -123,13 +123,13 @@ export function CreateTournamentForm() {
         </div>
       ) : null}
 
-      <div className="grid gap-3 rounded-md border border-white/10 bg-white/5 p-4">
+      <div className="grid gap-3 rounded-xl border border-arena-700 bg-arena-950 p-4">
         <label className="flex items-center gap-3 text-sm font-medium text-slate-200">
           <input
             type="checkbox"
             checked={isTwoLegged}
             onChange={(event) => setIsTwoLegged(event.target.checked)}
-            className="h-4 w-4 accent-lime-400"
+            className="h-4 w-4 accent-gold-500"
           />
           Ida e volta
         </label>
@@ -138,7 +138,7 @@ export function CreateTournamentForm() {
             type="checkbox"
             checked={hasThirdPlaceMatch}
             onChange={(event) => setHasThirdPlaceMatch(event.target.checked)}
-            className="h-4 w-4 accent-lime-400"
+            className="h-4 w-4 accent-gold-500"
           />
           Disputa de terceiro lugar
         </label>
@@ -153,7 +153,7 @@ export function CreateTournamentForm() {
       <button
         type="submit"
         disabled={!canSubmit}
-        className="rounded-md bg-lime-400 px-6 py-3 text-sm font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-xl bg-gold-500 px-6 py-3 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? 'Criando...' : 'Criar campeonato'}
       </button>

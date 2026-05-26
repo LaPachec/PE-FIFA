@@ -1,5 +1,10 @@
+'use client';
+
 import Link from 'next/link';
-import { listTournaments } from '@/services/tournaments';
+import { useEffect, useState } from 'react';
+import { AuthGuard } from '@/components/auth/auth-guard';
+import { LogoutButton } from '@/components/auth/logout-button';
+import { listTournaments, type Tournament } from '@/services/tournaments';
 
 const formatLabels = {
   LEAGUE: 'Liga',
@@ -7,58 +12,99 @@ const formatLabels = {
   LEAGUE_KNOCKOUT: 'Liga + mata-mata',
 };
 
-export default async function DashboardPage() {
-  const tournaments = await listTournaments().catch(() => []);
+export default function DashboardPage() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadTournaments() {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        setTournaments(await listTournaments());
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Nao foi possivel carregar seus campeonatos.',
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadTournaments();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-pitch-950 px-6 py-8 text-slate-50">
-      <section className="mx-auto w-full max-w-6xl">
-        <div className="flex flex-col gap-4 border-b border-white/10 pb-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Campeonatos</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              Acompanhe os campeonatos criados no ambiente local.
-            </p>
-          </div>
-          <Link
-            href="/tournaments/new"
-            className="rounded-md bg-lime-400 px-5 py-3 text-center text-sm font-bold text-pitch-950 transition hover:bg-lime-300"
-          >
-            Criar campeonato
-          </Link>
-        </div>
-
-        <div className="mt-8 grid gap-4">
-          {tournaments.length > 0 ? (
-            tournaments.map((tournament) => (
-              <Link
-                key={tournament.id}
-                href={`/tournaments/${tournament.id}`}
-                className="rounded-md border border-white/10 bg-white/5 p-5 transition hover:border-lime-300/70"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">{tournament.name}</h2>
-                    <p className="mt-1 text-sm text-slate-300">
-                      {tournament.description ?? 'Sem descrição'}
-                    </p>
-                  </div>
-                  <div className="text-sm text-slate-300">
-                    {formatLabels[tournament.format]} · {tournament.status}
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <div className="rounded-md border border-dashed border-white/15 p-8 text-center">
-              <h2 className="text-lg font-semibold text-white">Nenhum campeonato criado</h2>
-              <p className="mt-2 text-sm text-slate-300">
-                Crie o primeiro campeonato para começar a estruturar o MVP.
-              </p>
+    <AuthGuard>
+      {(user) => (
+        <main className="min-h-screen bg-arena-950 px-6 py-8 text-white">
+          <section className="mx-auto w-full max-w-6xl">
+            <div className="flex flex-col gap-4 border-b border-arena-700 pb-8 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold-400">
+                  {user.name}
+                </span>
+                <h1 className="mt-2 text-3xl font-bold">Campeonatos</h1>
+                <p className="mt-2 text-sm text-zinc-400">
+                  Acompanhe os campeonatos vinculados a sua conta.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/tournaments/new"
+                  className="rounded-xl bg-gold-500 px-5 py-3 text-center text-sm font-bold text-arena-950 transition hover:bg-gold-400"
+                >
+                  Criar campeonato
+                </Link>
+                <LogoutButton />
+              </div>
             </div>
-          )}
-        </div>
-      </section>
-    </main>
+
+            <div className="mt-8 grid gap-4">
+              {isLoading ? (
+                <div className="rounded-xl border border-arena-700 bg-arena-900 p-6 text-sm text-zinc-400">
+                  Carregando campeonatos...
+                </div>
+              ) : errorMessage ? (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                  {errorMessage}
+                </div>
+              ) : tournaments.length > 0 ? (
+                tournaments.map((tournament) => (
+                  <Link
+                    key={tournament.id}
+                    href={`/tournaments/${tournament.id}`}
+                    className="rounded-xl border border-arena-700 bg-arena-900 p-5 transition hover:border-gold-500/70"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="text-lg font-semibold text-white">{tournament.name}</h2>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          {tournament.description ?? 'Sem descricao'}
+                        </p>
+                      </div>
+                      <div className="text-sm text-zinc-400">
+                        {formatLabels[tournament.format]} - {tournament.status}
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-arena-700 p-8 text-center">
+                  <h2 className="text-lg font-semibold text-white">Nenhum campeonato criado</h2>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Crie o primeiro campeonato para comecar a estruturar o MVP.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+        </main>
+      )}
+    </AuthGuard>
   );
 }
