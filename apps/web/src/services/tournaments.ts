@@ -12,6 +12,7 @@ export type Tournament = {
   isTwoLegged: boolean;
   qualifiedCount: number | null;
   hasThirdPlaceMatch: boolean;
+  championParticipantId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -65,6 +66,12 @@ export function createTournament(payload: CreateTournamentPayload) {
 
 export function startTournament(id: string) {
   return request<Tournament>(`/tournaments/${id}/start`, {
+    method: 'POST',
+  });
+}
+
+export function finishTournament(id: string) {
+  return request<Tournament>(`/tournaments/${id}/finish`, {
     method: 'POST',
   });
 }

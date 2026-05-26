@@ -2,6 +2,7 @@ import type { StandingRow } from '@/services/standings';
 
 type StandingsTableProps = {
   standings: StandingRow[];
+  championParticipantId?: string;
 };
 
 const columns = [
@@ -18,7 +19,10 @@ const columns = [
   { key: 'goalDifference', label: 'SG', align: 'text-right' },
 ];
 
-export function StandingsTable({ standings }: StandingsTableProps) {
+export function StandingsTable({
+  standings,
+  championParticipantId,
+}: StandingsTableProps) {
   return (
     <div className="overflow-x-auto rounded-md border border-white/10">
       <table className="w-full min-w-[780px] border-collapse text-sm">
@@ -32,11 +36,24 @@ export function StandingsTable({ standings }: StandingsTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-white/10">
-          {standings.map((standing) => (
-            <tr key={standing.participantId} className="bg-white/[0.03]">
+          {standings.map((standing) => {
+            const isChampion = standing.participantId === championParticipantId;
+
+            return (
+              <tr
+                key={standing.participantId}
+                className={isChampion ? 'bg-lime-400/10' : 'bg-white/[0.03]'}
+              >
               <td className="px-3 py-3 font-bold text-white">{standing.position}</td>
               <td className="px-3 py-3">
-                <span className="block font-semibold text-white">{standing.name}</span>
+                <span className="block font-semibold text-white">
+                  {standing.name}
+                  {isChampion ? (
+                    <span className="ml-2 rounded-md border border-lime-300/30 px-2 py-0.5 text-xs text-lime-100">
+                      Campeao
+                    </span>
+                  ) : null}
+                </span>
                 {standing.nickname ? (
                   <span className="mt-1 block text-xs text-slate-400">{standing.nickname}</span>
                 ) : null}
@@ -55,7 +72,8 @@ export function StandingsTable({ standings }: StandingsTableProps) {
                 {standing.goalDifference}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

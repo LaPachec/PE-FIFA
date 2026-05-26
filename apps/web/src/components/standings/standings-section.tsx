@@ -6,16 +6,23 @@ import {
   getTournamentStandings,
   type StandingRow,
 } from '@/services/standings';
+import type { TournamentStatus } from '@/services/tournaments';
 
 type StandingsSectionProps = {
   tournamentId: string;
+  tournamentStatus: TournamentStatus;
   refreshKey: number;
 };
 
-export function StandingsSection({ tournamentId, refreshKey }: StandingsSectionProps) {
+export function StandingsSection({
+  tournamentId,
+  tournamentStatus,
+  refreshKey,
+}: StandingsSectionProps) {
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const champion = tournamentStatus === 'FINISHED' ? standings[0] : null;
 
   const loadStandings = useCallback(async () => {
     setIsLoading(true);
@@ -72,7 +79,20 @@ export function StandingsSection({ tournamentId, refreshKey }: StandingsSectionP
             Nenhum participante cadastrado ainda.
           </div>
         ) : (
-          <StandingsTable standings={standings} />
+          <>
+            {champion ? (
+              <div className="mb-5 rounded-md border border-lime-300/30 bg-lime-400/10 p-5">
+                <span className="text-xs font-semibold uppercase text-lime-200">
+                  Campeao da Liga
+                </span>
+                <strong className="mt-2 block text-2xl text-white">{champion.name}</strong>
+                <p className="mt-1 text-sm text-slate-300">
+                  {champion.teamName ?? 'Time nao informado'} - {champion.points} pontos
+                </p>
+              </div>
+            ) : null}
+            <StandingsTable standings={standings} championParticipantId={champion?.participantId} />
+          </>
         )}
       </div>
     </section>

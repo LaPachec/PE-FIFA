@@ -8,12 +8,18 @@ import {
   type Match,
 } from '@/services/matches';
 import { getParticipants, type Participant } from '@/services/participants';
-import { startTournament, type TournamentStatus } from '@/services/tournaments';
+import {
+  finishTournament,
+  startTournament,
+  type Tournament,
+  type TournamentStatus,
+} from '@/services/tournaments';
 
 type TournamentMatchesProps = {
   tournamentId: string;
   tournamentStatus: TournamentStatus;
   onMatchesChanged?: () => void;
+  onTournamentStatusChanged?: (tournament: Tournament) => void;
 };
 
 type ResultFormState = {
@@ -56,6 +62,7 @@ export function TournamentMatches({
   tournamentId,
   tournamentStatus,
   onMatchesChanged,
+  onTournamentStatusChanged,
 }: TournamentMatchesProps) {
   const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState<TournamentStatus>(tournamentStatus);
@@ -63,6 +70,7 @@ export function TournamentMatches({
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [savingResultMatchId, setSavingResultMatchId] = useState<string | null>(null);
   const [editingResultMatchId, setEditingResultMatchId] = useState<string | null>(null);
   const [resultForm, setResultForm] = useState<ResultFormState>(emptyResultForm);
@@ -81,6 +89,12 @@ export function TournamentMatches({
   }, [participants]);
 
   const canStartTournament = currentStatus === 'DRAFT' && !isStarting;
+  const hasPendingMatches = matches.some((match) => match.status === 'PENDING');
+  const canFinishTournament =
+    currentStatus === 'IN_PROGRESS' &&
+    matches.length > 0 &&
+    !hasPendingMatches &&
+    !isFinishing;
   const isSavingResult = savingResultMatchId !== null;
 
   const loadMatches = useCallback(async () => {
@@ -127,6 +141,7 @@ export function TournamentMatches({
       setCurrentStatus(tournament.status);
       await loadMatches();
       onMatchesChanged?.();
+      onTournamentStatusChanged?.(tournament);
       router.refresh();
       setFeedback({ type: 'success', message: 'Campeonato iniciado com sucesso.' });
     } catch (error) {
@@ -139,6 +154,38 @@ export function TournamentMatches({
       });
     } finally {
       setIsStarting(false);
+    }
+  }
+
+  async function handleFinishTournament() {
+    const confirmed = window.confirm(
+      'Deseja finalizar este campeonato? Esta acao define o campeao pela classificacao atual.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsFinishing(true);
+    setFeedback(null);
+
+    try {
+      const tournament = await finishTournament(tournamentId);
+      setCurrentStatus(tournament.status);
+      onMatchesChanged?.();
+      onTournamentStatusChanged?.(tournament);
+      router.refresh();
+      setFeedback({ type: 'success', message: 'Campeonato finalizado com sucesso.' });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Nao foi possivel finalizar o campeonato.',
+      });
+    } finally {
+      setIsFinishing(false);
     }
   }
 
@@ -234,16 +281,33 @@ export function TournamentMatches({
             </button>
           ) : null}
 
+          {currentStatus === 'IN_PROGRESS' ? (
+            <button
+              type="button"
+              onClick={() => void handleFinishTournament()}
+              disabled={!canFinishTournament}
+              className="rounded-md bg-lime-400 px-4 py-2 text-sm font-bold text-pitch-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isFinishing ? 'Finalizando...' : 'Finalizar campeonato'}
+            </button>
+          ) : null}
+
           <button
             type="button"
             onClick={() => void loadMatches()}
-            disabled={isLoading || isStarting}
+            disabled={isLoading || isStarting || isFinishing}
             className="rounded-md border border-white/15 px-4 py-2 text-sm font-semibold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Atualizar
           </button>
         </div>
       </div>
+
+      {currentStatus === 'IN_PROGRESS' && hasPendingMatches ? (
+        <div className="mt-5 rounded-md border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          Finalize todas as partidas antes de encerrar o campeonato.
+        </div>
+      ) : null}
 
       {feedback ? (
         <div
@@ -326,14 +390,18 @@ export function TournamentMatches({
                       </span>
                     </div>
                     <div className="flex justify-start lg:justify-end">
-                      <button
-                        type="button"
-                        onClick={() => startResultEditing(match)}
-                        disabled={isSavingResult}
-                        className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {resultActionLabel}
-                      </button>
+                      {currentStatus !== 'FINISHED' ? (
+                        <button
+                          type="button"
+                          onClick={() => startResultEditing(match)}
+                          disabled={isSavingResult}
+                          className="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-white transition hover:border-lime-300 hover:text-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {resultActionLabel}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-500">Encerrado</span>
+                      )}
                     </div>
                   </div>
 
