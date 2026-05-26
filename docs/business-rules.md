@@ -114,6 +114,18 @@ Regras:
 10. Os demais participantes permanecem `ACTIVE` nesta etapa, para manter a finalizacao simples.
 11. Um campeonato `FINISHED` nao pode ser finalizado novamente.
 
+## Pagina publica do campeonato
+
+A pagina publica permite compartilhar a visualizacao de um campeonato sem autenticacao.
+
+Regras:
+
+1. A URL publica usa o `slug` do campeonato.
+2. A visualizacao publica e somente leitura.
+3. A pagina publica nao permite editar campeonato, participantes, partidas ou resultados.
+4. Dados sensiveis do usuario dono nao devem ser retornados pela API publica.
+5. A pagina publica mostra campeonato, participantes, partidas, classificacao e campeao quando houver.
+
 ## Decisoes pendentes
 
 1. Como aplicar penaltis em fases eliminatorias.

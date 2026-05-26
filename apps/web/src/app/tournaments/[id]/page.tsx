@@ -33,13 +33,23 @@ export default async function TournamentDetailsPage({
         </Link>
 
         <div className="mt-8 border-b border-white/10 pb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-lime-300">
-            {tournament.status}
-          </p>
-          <h1 className="mt-3 text-4xl font-bold">{tournament.name}</h1>
-          <p className="mt-4 max-w-2xl text-slate-300">
-            {tournament.description ?? 'Campeonato sem descricao.'}
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-lime-300">
+                {tournament.status}
+              </p>
+              <h1 className="mt-3 text-4xl font-bold">{tournament.name}</h1>
+              <p className="mt-4 max-w-2xl text-slate-300">
+                {tournament.description ?? 'Campeonato sem descricao.'}
+              </p>
+            </div>
+            <Link
+              href={`/public/tournaments/${tournament.slug}`}
+              className="rounded-md border border-white/15 px-4 py-2 text-center text-sm font-semibold text-white transition hover:border-lime-300 hover:text-lime-200"
+            >
+              Ver pagina publica
+            </Link>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

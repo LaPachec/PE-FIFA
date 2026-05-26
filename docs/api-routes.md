@@ -16,6 +16,40 @@ Resposta esperada:
 }
 ```
 
+## Rotas publicas
+
+### GET /public/tournaments/:slug
+
+Retorna os dados publicos de um campeonato para exibicao compartilhavel e somente leitura.
+
+Regras:
+
+- Usa o `slug` do campeonato na URL.
+- Retorna `404` se o campeonato nao existir.
+- Nao exige autenticacao.
+- Nao retorna dados sensiveis do usuario dono.
+- Retorna dados do campeonato, participantes, partidas, classificacao e campeao quando houver.
+
+Resposta:
+
+```json
+{
+  "tournament": {
+    "id": "tournament-id",
+    "name": "Copa dos Amigos",
+    "slug": "copa-dos-amigos",
+    "description": "Campeonato local",
+    "format": "LEAGUE",
+    "status": "IN_PROGRESS",
+    "championParticipantId": null
+  },
+  "participants": [],
+  "matches": [],
+  "standings": [],
+  "champion": null
+}
+```
+
 ## Campeonatos
 
 ### POST /tournaments
