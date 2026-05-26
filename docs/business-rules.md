@@ -75,7 +75,7 @@ Regras:
 
 ## Registro de resultados da liga
 
-Nesta etapa, apenas partidas da fase `LEAGUE` podem receber resultado.
+Partidas da fase `LEAGUE` permitem empate e nao geram avanco eliminatorio.
 
 Regras:
 
@@ -91,6 +91,46 @@ Regras:
 10. Em empate, `winnerParticipantId` fica `null`.
 11. Quando houver vencedor, `winnerParticipantId` recebe o participante mandante ou visitante conforme o placar.
 12. O registro de resultado nao persiste classificacao; a tabela e calculada sob demanda.
+
+## Registro de resultados no mata-mata
+
+Partidas eliminatorias precisam ter um vencedor.
+
+Regras:
+
+1. A partida precisa existir.
+2. O campeonato da partida precisa existir.
+3. O campeonato precisa estar com status `IN_PROGRESS`.
+4. O placar do mandante e do visitante e obrigatorio.
+5. Placar deve ser um numero inteiro maior ou igual a zero.
+6. Empates nao sao permitidos.
+7. `winnerParticipantId` e definido automaticamente pelo maior placar.
+8. Ao registrar resultado, a partida recebe `status = FINISHED`.
+9. O campo `playedAt` e atualizado sempre que o resultado for registrado.
+10. Quando todas as partidas da fase atual terminam, a proxima fase e gerada automaticamente.
+11. Se a proxima fase ja existir, ela nao e recriada.
+12. Se a proxima fase ainda estiver pendente, seus participantes podem ser atualizados em caso de correcao de resultado da fase anterior.
+
+## Avanco automatico no mata-mata
+
+O avanco no mata-mata e calculado a partir dos vencedores da fase atual, ordenados por `matchOrder`.
+
+Fases:
+
+1. `ROUND_OF_16` gera `QUARTER_FINAL`.
+2. `QUARTER_FINAL` gera `SEMI_FINAL`.
+3. `SEMI_FINAL` gera `FINAL`.
+4. `FINAL` finaliza o campeonato.
+
+Regras:
+
+1. A proxima fase usa `round` incrementado.
+2. Vencedores sao agrupados de dois em dois.
+3. O primeiro vencedor do par vira mandante.
+4. O segundo vencedor do par vira visitante.
+5. Quando a `FINAL` termina, o campeonato passa para `FINISHED`.
+6. O campeao da final e salvo em `championParticipantId`.
+7. O participante campeao recebe status `CHAMPION`.
 
 ## Classificacao da liga
 
