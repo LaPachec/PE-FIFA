@@ -16,6 +16,22 @@ export const updateMatchResultSchema = z
       })
       .int('awayScore must be an integer')
       .min(0, 'awayScore cannot be negative'),
+    homePenaltyScore: z
+      .number({
+        invalid_type_error: 'homePenaltyScore must be an integer',
+      })
+      .int('homePenaltyScore must be an integer')
+      .min(0, 'homePenaltyScore cannot be negative')
+      .optional()
+      .nullable(),
+    awayPenaltyScore: z
+      .number({
+        invalid_type_error: 'awayPenaltyScore must be an integer',
+      })
+      .int('awayPenaltyScore must be an integer')
+      .min(0, 'awayPenaltyScore cannot be negative')
+      .optional()
+      .nullable(),
   })
   .strict();
 

@@ -608,8 +608,10 @@ Body:
 
 ```json
 {
-  "homeScore": 3,
-  "awayScore": 1
+  "homeScore": 2,
+  "awayScore": 2,
+  "homePenaltyScore": 5,
+  "awayPenaltyScore": 4
 }
 ```
 
@@ -617,15 +619,21 @@ Validacoes e regras:
 
 - `homeScore` e obrigatorio, inteiro e nao pode ser negativo.
 - `awayScore` e obrigatorio, inteiro e nao pode ser negativo.
+- `homePenaltyScore` e `awayPenaltyScore` sao opcionais, inteiros e nao podem ser negativos.
 - Retorna `404` se a partida nao existir.
 - Retorna `404` se o campeonato da partida nao existir.
 - Retorna `409` se o campeonato nao estiver em `IN_PROGRESS`.
 - Para partidas eliminatorias de `LEAGUE_KNOCKOUT`, tambem aceita campeonato em `KNOCKOUT_STAGE`.
 - Partidas com `phase = LEAGUE` permitem empate.
-- Partidas eliminatorias nao permitem empate.
-- Em partidas eliminatorias, o vencedor e definido automaticamente pelo maior placar.
+- Partidas de `LEAGUE` ignoram penaltis; os campos `homePenaltyScore` e `awayPenaltyScore` sao limpos.
+- Partidas eliminatorias permitem empate no tempo normal apenas quando houver decisao por penaltis.
+- Se uma partida eliminatoria empatar sem penaltis, retorna `400`.
+- Se os penaltis forem informados com valores iguais, retorna `400`.
+- Em partidas eliminatorias, o vencedor e definido pelo maior placar normal ou pelo maior placar nos penaltis quando o tempo normal empatar.
 - Ao registrar resultado, a partida fica com `status = FINISHED` e `playedAt` atualizado.
+- O resultado salva `homeScore`, `awayScore`, `homePenaltyScore`, `awayPenaltyScore` e `winnerParticipantId`.
 - Se a partida ja estiver finalizada, o resultado pode ser atualizado.
+- Se a proxima fase ja tiver sido gerada, o comportamento atual e mantido: fases pendentes podem receber participantes atualizados, mas chaveamentos ja iniciados nao sao recriados.
 - No mata-mata, quando todas as partidas da fase atual terminam, a proxima fase e gerada automaticamente.
 - Quando a `FINAL` termina, o campeonato passa para `FINISHED`, `championParticipantId` e salvo e o campeao recebe status `CHAMPION`.
 

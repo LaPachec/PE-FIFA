@@ -6,6 +6,7 @@ const knockoutPhases: MatchPhase[] = [
   'ROUND_OF_16',
   'QUARTER_FINAL',
   'SEMI_FINAL',
+  'THIRD_PLACE',
   'FINAL',
 ];
 
@@ -33,18 +34,61 @@ function getLeagueWinnerParticipantId(
 function getKnockoutWinnerParticipantId(
   homeScore: number,
   awayScore: number,
+  homePenaltyScore: number | null | undefined,
+  awayPenaltyScore: number | null | undefined,
   homeParticipantId: string | null,
   awayParticipantId: string | null,
 ) {
-  if (homeScore === awayScore) {
-    throw new AppError('Knockout matches must have a winner', 400);
-  }
-
   if (!homeParticipantId || !awayParticipantId) {
     throw new AppError('Match participants are not defined', 409);
   }
 
+  if (homeScore === awayScore) {
+    const hasPenaltyScores =
+      homePenaltyScore !== null &&
+      homePenaltyScore !== undefined &&
+      awayPenaltyScore !== null &&
+      awayPenaltyScore !== undefined;
+
+    if (!hasPenaltyScores) {
+      throw new AppError('Partidas eliminatórias empatadas precisam de decisão por pênaltis.', 400);
+    }
+
+    if (homePenaltyScore === awayPenaltyScore) {
+      throw new AppError('A disputa de pênaltis precisa ter um vencedor.', 400);
+    }
+
+    return homePenaltyScore > awayPenaltyScore ? homeParticipantId : awayParticipantId;
+  }
+
   return homeScore > awayScore ? homeParticipantId : awayParticipantId;
+}
+
+function getPenaltyScores(input: {
+  phase: MatchPhase;
+  homeScore: number;
+  awayScore: number;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
+}) {
+  if (!isKnockoutPhase(input.phase)) {
+    return {
+      homePenaltyScore: null,
+      awayPenaltyScore: null,
+    };
+  }
+
+  if (input.homeScore !== input.awayScore) {
+    return {
+      homePenaltyScore: null,
+      awayPenaltyScore: null,
+    };
+  }
+
+  return {
+    homePenaltyScore: input.homePenaltyScore ?? null,
+    awayPenaltyScore: input.awayPenaltyScore ?? null,
+  };
 }
 
 function getNextKnockoutPhase(phase: MatchPhase) {
@@ -275,15 +319,26 @@ export const matchesService = {
           : getKnockoutWinnerParticipantId(
               input.homeScore,
               input.awayScore,
+              input.homePenaltyScore,
+              input.awayPenaltyScore,
               match.homeParticipantId,
               match.awayParticipantId,
             );
+      const penaltyScores = getPenaltyScores({
+        phase: match.phase,
+        homeScore: input.homeScore,
+        awayScore: input.awayScore,
+        homePenaltyScore: input.homePenaltyScore,
+        awayPenaltyScore: input.awayPenaltyScore,
+      });
 
       const updatedMatch = await transaction.match.update({
         where: { id },
         data: {
           homeScore: input.homeScore,
           awayScore: input.awayScore,
+          homePenaltyScore: penaltyScores.homePenaltyScore,
+          awayPenaltyScore: penaltyScores.awayPenaltyScore,
           status: 'FINISHED',
           playedAt: new Date(),
           winnerParticipantId,

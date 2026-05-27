@@ -179,11 +179,12 @@ Regras:
 9. Partidas finalizadas podem ter o resultado corrigido.
 10. Em empate, `winnerParticipantId` fica `null`.
 11. Quando houver vencedor, `winnerParticipantId` recebe o participante mandante ou visitante conforme o placar.
-12. O registro de resultado nao persiste classificacao; a tabela e calculada sob demanda.
+12. Campos de penaltis enviados em partidas de liga sao ignorados e limpos.
+13. O registro de resultado nao persiste classificacao; a tabela e calculada sob demanda.
 
 ## Registro de resultados no mata-mata
 
-Partidas eliminatorias precisam ter um vencedor.
+Partidas eliminatorias precisam ter um vencedor, mas podem empatar no tempo normal quando houver decisao por penaltis.
 
 Regras:
 
@@ -192,13 +193,17 @@ Regras:
 3. O campeonato precisa estar com status `IN_PROGRESS` ou, para `LEAGUE_KNOCKOUT`, `KNOCKOUT_STAGE`.
 4. O placar do mandante e do visitante e obrigatorio.
 5. Placar deve ser um numero inteiro maior ou igual a zero.
-6. Empates nao sao permitidos.
-7. `winnerParticipantId` e definido automaticamente pelo maior placar.
-8. Ao registrar resultado, a partida recebe `status = FINISHED`.
-9. O campo `playedAt` e atualizado sempre que o resultado for registrado.
-10. Quando todas as partidas da fase atual terminam, a proxima fase e gerada automaticamente.
-11. Se a proxima fase ja existir, ela nao e recriada.
-12. Se a proxima fase ainda estiver pendente, seus participantes podem ser atualizados em caso de correcao de resultado da fase anterior.
+6. Se o placar normal tiver vencedor, os campos de penaltis sao limpos.
+7. Se o placar normal empatar, `homePenaltyScore` e `awayPenaltyScore` sao obrigatorios.
+8. Penaltis devem ser numeros inteiros maiores ou iguais a zero.
+9. A disputa de penaltis precisa ter um vencedor.
+10. `winnerParticipantId` e definido automaticamente pelo maior placar normal ou pelo maior placar nos penaltis.
+11. Ao registrar resultado, a partida recebe `status = FINISHED`.
+12. O campo `playedAt` e atualizado sempre que o resultado for registrado.
+13. Quando todas as partidas da fase atual terminam, a proxima fase e gerada automaticamente.
+14. Se a proxima fase ja existir, ela nao e recriada.
+15. Se a proxima fase ainda estiver pendente, seus participantes podem ser atualizados em caso de correcao de resultado da fase anterior.
+16. Se a proxima fase ja tiver iniciado, o sistema mantem o comportamento atual e nao recria o chaveamento.
 
 ## Avanco automatico no mata-mata
 
@@ -328,6 +333,5 @@ Regras:
 
 ## Decisoes pendentes
 
-1. Como aplicar penaltis em fases eliminatorias.
-2. Como encerrar automaticamente uma liga.
-3. Como tratar criterios adicionais de desempate, se necessario.
+1. Como encerrar automaticamente uma liga.
+2. Como tratar criterios adicionais de desempate, se necessario.
