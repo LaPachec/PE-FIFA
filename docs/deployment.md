@@ -66,7 +66,7 @@ pnpm db:deploy
 
 Use `pnpm db:migrate` apenas em desenvolvimento local. Em producao, use `pnpm db:deploy`.
 
-## Deploy da API no Render
+## Deploy da API no Render pelo painel
 
 Crie um Web Service apontando para o repositorio.
 
@@ -84,6 +84,33 @@ Variaveis obrigatorias:
 - `NODE_ENV=production`
 - `CORS_ORIGIN=https://seu-front.vercel.app`
 
+O `PORT` nao precisa ser configurado manualmente. O Render injeta essa variavel no ambiente do servico.
+
+## Deploy da API no Render com `render.yaml`
+
+O repositorio tambem possui um `render.yaml` opcional para facilitar a criacao do Web Service da API.
+
+Ele configura:
+
+- Runtime Node.
+- Root Directory na raiz do monorepo.
+- Build Command: `corepack enable && pnpm install --frozen-lockfile && pnpm db:generate && pnpm build:api`
+- Start Command: `pnpm start:api`
+- Health Check Path: `/health`
+- `NODE_ENV=production`
+
+As variaveis abaixo ficam com `sync: false` e devem ser preenchidas manualmente no painel do Render:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `CORS_ORIGIN`
+
+Use `CORS_ORIGIN` com a URL final do front na Vercel, por exemplo:
+
+```env
+CORS_ORIGIN="https://seu-front.vercel.app"
+```
+
 Depois do deploy, valide:
 
 ```bash
@@ -99,7 +126,7 @@ Resposta esperada:
 }
 ```
 
-## Deploy do front-end na Vercel
+## Deploy do front-end na Vercel pelo painel
 
 Crie um projeto na Vercel apontando para o mesmo repositorio.
 
@@ -118,6 +145,24 @@ Variaveis obrigatorias:
 Se preferir manter o Root Directory na raiz do repositorio, use:
 
 - Build Command: `pnpm build:web`
+
+Nao ha `vercel.json` obrigatorio neste projeto. Para este monorepo, a configuracao mais clara e definir o Root Directory como `apps/web` no painel da Vercel e manter as variaveis de ambiente do front no proprio projeto da Vercel.
+
+## Comandos de build e start por app
+
+API:
+
+```bash
+pnpm --filter @fifa-tournament-manager/api build
+pnpm --filter @fifa-tournament-manager/api start
+```
+
+Web:
+
+```bash
+pnpm --filter @fifa-tournament-manager/web build
+pnpm --filter @fifa-tournament-manager/web start
+```
 
 ## Comandos uteis do monorepo
 
@@ -155,7 +200,12 @@ pnpm --filter @fifa-tournament-manager/database deploy
 - `CORS_ORIGIN` aponta para o dominio real da Vercel.
 - `NEXT_PUBLIC_API_URL` aponta para a API real do Render.
 - `NEXT_PUBLIC_APP_URL` aponta para o front real da Vercel.
+- `DATABASE_URL` no Render aponta para o banco Supabase correto.
+- `JWT_SECRET` foi configurado com um valor forte e privado.
 - Migrations foram aplicadas no Supabase.
 - `/health` responde em producao.
+- Login e cadastro funcionam no front publicado.
+- Criacao de campeonato funciona com usuario autenticado.
 - Fluxos publicos funcionam sem login.
+- Pagina publica de campeonato abre sem token.
 - Paginas privadas redirecionam usuarios sem token para `/login`.
