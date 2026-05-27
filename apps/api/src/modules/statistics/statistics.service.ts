@@ -157,13 +157,15 @@ export const statisticsService = {
       throw new AppError('Tournament not found', 404);
     }
 
-    const participantNameById = new Map(
-      tournament.participants.map((participant: StatisticsParticipant) => [
+    const typedTournament = tournament as StatisticsTournament;
+
+    const participantNameById = new Map<string, string>(
+      typedTournament.participants.map((participant) => [
         participant.id,
         participant.name,
       ]),
     );
-    const typedTournament: StatisticsTournament = tournament;
+
     const statisticsByParticipantId: ParticipantStatisticsMap =
       typedTournament.participants.reduce<ParticipantStatisticsMap>(
         (statisticsMap, participant: StatisticsParticipant) => {
