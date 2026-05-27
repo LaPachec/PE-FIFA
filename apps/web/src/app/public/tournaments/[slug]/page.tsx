@@ -90,9 +90,15 @@ export default async function PublicTournamentPage({
     return participantNameById.get(participantId) ?? 'Participante removido';
   }
 
-  function getScore(homeScore: number | null, awayScore: number | null) {
+  function getScore(match: Match) {
+    const { homeScore, awayScore, homePenaltyScore, awayPenaltyScore } = match;
+
     if (homeScore === null || awayScore === null) {
       return 'x';
+    }
+
+    if (homePenaltyScore !== null && awayPenaltyScore !== null) {
+      return `${homeScore} (${homePenaltyScore}) x (${awayPenaltyScore}) ${awayScore}`;
     }
 
     return `${homeScore} x ${awayScore}`;
@@ -282,7 +288,7 @@ export default async function PublicTournamentPage({
                               Placar
                             </span>
                             <strong className="mt-1 block text-gold-400">
-                              {getScore(match.homeScore, match.awayScore)}
+                              {getScore(match)}
                             </strong>
                           </div>
                           <div>

@@ -34,6 +34,8 @@ export type Match = {
 export type UpdateMatchResultPayload = {
   homeScore: number;
   awayScore: number;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
 };
 
 export function getTournamentMatches(tournamentId: string) {

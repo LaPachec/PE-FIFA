@@ -23,6 +23,8 @@ export type HighestScoringMatch = {
   awayParticipantName: string;
   homeScore: number;
   awayScore: number;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
   totalGoals: number;
 };
 
@@ -32,6 +34,8 @@ export type BiggestWin = {
   awayParticipantName: string;
   homeScore: number;
   awayScore: number;
+  homePenaltyScore?: number | null;
+  awayPenaltyScore?: number | null;
   goalDifference: number;
   winnerName: string;
 };
@@ -178,6 +182,8 @@ export function buildTournamentStatisticsFromPublicData(
         participantNameById.get(match.awayParticipantId) ?? 'Participante removido',
       homeScore: match.homeScore,
       awayScore: match.awayScore,
+      homePenaltyScore: match.homePenaltyScore,
+      awayPenaltyScore: match.awayPenaltyScore,
     };
 
     if (!highestScoringMatch || matchTotalGoals > highestScoringMatch.totalGoals) {

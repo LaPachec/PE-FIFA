@@ -31,6 +31,8 @@ type TournamentMatchesProps = {
 type ResultFormState = {
   homeScore: string;
   awayScore: string;
+  homePenaltyScore: string;
+  awayPenaltyScore: string;
 };
 
 const phaseLabels: Record<Match['phase'], string> = {
@@ -59,10 +61,22 @@ const statusLabels: Record<Match['status'], string> = {
 const emptyResultForm: ResultFormState = {
   homeScore: '',
   awayScore: '',
+  homePenaltyScore: '',
+  awayPenaltyScore: '',
 };
 
 function isKnockoutPhase(phase: Match['phase']) {
   return phase !== 'LEAGUE';
+}
+
+function hasNormalTimeTie(form: ResultFormState) {
+  return (
+    form.homeScore.trim().length > 0 &&
+    form.awayScore.trim().length > 0 &&
+    /^\d+$/.test(form.homeScore.trim()) &&
+    /^\d+$/.test(form.awayScore.trim()) &&
+    Number(form.homeScore) === Number(form.awayScore)
+  );
 }
 
 function getResultFormError(form: ResultFormState, match: Match) {
@@ -74,14 +88,36 @@ function getResultFormError(form: ResultFormState, match: Match) {
     return 'O placar deve ser um numero inteiro maior ou igual a zero.';
   }
 
-  if (
-    isKnockoutPhase(match.phase) &&
-    Number(form.homeScore) === Number(form.awayScore)
-  ) {
-    return 'Partidas de mata-mata precisam ter um vencedor.';
+  if (isKnockoutPhase(match.phase) && hasNormalTimeTie(form)) {
+    if (!form.homePenaltyScore.trim() || !form.awayPenaltyScore.trim()) {
+      return 'Informe os penaltis do mandante e do visitante.';
+    }
+
+    if (
+      !/^\d+$/.test(form.homePenaltyScore.trim()) ||
+      !/^\d+$/.test(form.awayPenaltyScore.trim())
+    ) {
+      return 'Os penaltis devem ser numeros inteiros maiores ou iguais a zero.';
+    }
+
+    if (Number(form.homePenaltyScore) === Number(form.awayPenaltyScore)) {
+      return 'A disputa de pênaltis precisa ter um vencedor.';
+    }
   }
 
   return null;
+}
+
+function getMatchScoreLabel(match: Match) {
+  if (match.status !== 'FINISHED' || match.homeScore === null || match.awayScore === null) {
+    return 'x';
+  }
+
+  if (match.homePenaltyScore !== null && match.awayPenaltyScore !== null) {
+    return `${match.homeScore} (${match.homePenaltyScore}) x (${match.awayPenaltyScore}) ${match.awayScore}`;
+  }
+
+  return `${match.homeScore} x ${match.awayScore}`;
 }
 
 export function TournamentMatches({
@@ -304,11 +340,7 @@ export function TournamentMatches({
   }
 
   function getScoreLabel(match: Match) {
-    if (match.status !== 'FINISHED' || match.homeScore === null || match.awayScore === null) {
-      return 'x';
-    }
-
-    return `${match.homeScore} x ${match.awayScore}`;
+    return getMatchScoreLabel(match);
   }
 
   function startResultEditing(match: Match) {
@@ -316,6 +348,10 @@ export function TournamentMatches({
     setResultForm({
       homeScore: match.homeScore === null ? '' : String(match.homeScore),
       awayScore: match.awayScore === null ? '' : String(match.awayScore),
+      homePenaltyScore:
+        match.homePenaltyScore === null ? '' : String(match.homePenaltyScore),
+      awayPenaltyScore:
+        match.awayPenaltyScore === null ? '' : String(match.awayPenaltyScore),
     });
     setFeedback(null);
   }
@@ -363,9 +399,17 @@ export function TournamentMatches({
     setSavingResultMatchId(matchId);
 
     try {
+      const shouldSendPenaltyScores =
+        isKnockoutPhase(currentMatch.phase) && hasNormalTimeTie(resultForm);
       const match = await updateMatchResult(matchId, {
         homeScore: Number(resultForm.homeScore),
         awayScore: Number(resultForm.awayScore),
+        ...(shouldSendPenaltyScores
+          ? {
+              homePenaltyScore: Number(resultForm.homePenaltyScore),
+              awayPenaltyScore: Number(resultForm.awayPenaltyScore),
+            }
+          : {}),
       });
 
       if (
@@ -535,6 +579,8 @@ export function TournamentMatches({
                   const resultActionLabel =
                     match.status === 'FINISHED' ? 'Editar resultado' : 'Registrar resultado';
                   const isFinal = match.phase === 'FINAL';
+                  const shouldShowPenaltyFields =
+                    isEditingResult && isKnockoutPhase(match.phase) && hasNormalTimeTie(resultForm);
 
                   return (
                     <div
@@ -613,40 +659,85 @@ export function TournamentMatches({
                       {isEditingResult ? (
                         <form
                           onSubmit={(event) => void handleSaveResult(event, match.id)}
-                          className="mt-4 grid gap-3 border-t border-arena-700 pt-4 sm:grid-cols-[1fr_1fr_auto]"
+                          className="mt-4 grid gap-4 border-t border-arena-700 pt-4"
                         >
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            inputMode="numeric"
-                            value={resultForm.homeScore}
-                            onChange={(event) =>
-                              setResultForm((current) => ({
-                                ...current,
-                                homeScore: event.target.value,
-                              }))
-                            }
-                            className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
-                            placeholder="Gols do mandante"
-                            required
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            inputMode="numeric"
-                            value={resultForm.awayScore}
-                            onChange={(event) =>
-                              setResultForm((current) => ({
-                                ...current,
-                                awayScore: event.target.value,
-                              }))
-                            }
-                            className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
-                            placeholder="Gols do visitante"
-                            required
-                          />
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              inputMode="numeric"
+                              value={resultForm.homeScore}
+                              onChange={(event) =>
+                                setResultForm((current) => ({
+                                  ...current,
+                                  homeScore: event.target.value,
+                                }))
+                              }
+                              className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
+                              placeholder="Gols do mandante"
+                              required
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              inputMode="numeric"
+                              value={resultForm.awayScore}
+                              onChange={(event) =>
+                                setResultForm((current) => ({
+                                  ...current,
+                                  awayScore: event.target.value,
+                                }))
+                              }
+                              className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
+                              placeholder="Gols do visitante"
+                              required
+                            />
+                          </div>
+
+                          {shouldShowPenaltyFields ? (
+                            <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 p-4">
+                              <span className="text-xs font-bold uppercase tracking-[0.16em] text-gold-400">
+                                Decisão por pênaltis
+                              </span>
+                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  inputMode="numeric"
+                                  value={resultForm.homePenaltyScore}
+                                  onChange={(event) =>
+                                    setResultForm((current) => ({
+                                      ...current,
+                                      homePenaltyScore: event.target.value,
+                                    }))
+                                  }
+                                  className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
+                                  placeholder="Pênaltis do mandante"
+                                  required
+                                />
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  inputMode="numeric"
+                                  value={resultForm.awayPenaltyScore}
+                                  onChange={(event) =>
+                                    setResultForm((current) => ({
+                                      ...current,
+                                      awayPenaltyScore: event.target.value,
+                                    }))
+                                  }
+                                  className="min-w-0 rounded-xl border border-arena-700 bg-arena-900 px-3 py-2 text-sm text-white outline-none focus:border-gold-500"
+                                  placeholder="Pênaltis do visitante"
+                                  required
+                                />
+                              </div>
+                            </div>
+                          ) : null}
+
                           <div className="flex gap-2 sm:justify-end">
                             <button
                               type="submit"

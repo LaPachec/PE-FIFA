@@ -50,6 +50,16 @@ function MatchHighlightCard({
   label: string;
   match: HighestScoringMatch | BiggestWin | null;
 }) {
+  const score =
+    match?.homePenaltyScore !== null &&
+    match?.homePenaltyScore !== undefined &&
+    match?.awayPenaltyScore !== null &&
+    match?.awayPenaltyScore !== undefined
+      ? `${match.homeScore} (${match.homePenaltyScore}) x (${match.awayPenaltyScore}) ${match.awayScore}`
+      : match
+        ? `${match.homeScore} x ${match.awayScore}`
+        : null;
+
   return (
     <div className="rounded-xl border border-gold-500/30 bg-gold-500/10 p-4">
       <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gold-400">
@@ -58,8 +68,7 @@ function MatchHighlightCard({
       {match ? (
         <>
           <strong className="mt-3 block text-white">
-            {match.homeParticipantName} {match.homeScore} x {match.awayScore}{' '}
-            {match.awayParticipantName}
+            {match.homeParticipantName} {score} {match.awayParticipantName}
           </strong>
           <span className="mt-2 block text-sm text-zinc-300">
             {'totalGoals' in match
