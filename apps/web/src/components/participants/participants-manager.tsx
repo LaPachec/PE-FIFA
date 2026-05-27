@@ -150,6 +150,14 @@ export function ParticipantsManager({
   }
 
   async function handleDelete(participantId: string) {
+    const confirmed = window.confirm(
+      'Deseja remover este participante? Esta acao nao pode ser desfeita.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setFeedback(null);
     setIsSaving(true);
 

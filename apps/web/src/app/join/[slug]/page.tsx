@@ -22,6 +22,22 @@ const statusLabels = {
   FINISHED: 'Finalizado',
 };
 
+function getClosedInviteMessage(invite: TournamentInvite) {
+  if (invite.status !== 'DRAFT') {
+    return 'Este campeonato ja foi iniciado.';
+  }
+
+  if (!invite.inviteEnabled) {
+    return 'As inscricoes para este campeonato estao fechadas.';
+  }
+
+  if (invite.remainingSlots !== null && invite.remainingSlots <= 0) {
+    return 'Todas as vagas deste campeonato ja foram preenchidas.';
+  }
+
+  return 'As inscricoes nao estao mais abertas.';
+}
+
 export default function JoinTournamentPage() {
   const params = useParams<{ slug: string }>();
   const [invite, setInvite] = useState<TournamentInvite | null>(null);
@@ -119,7 +135,7 @@ export default function JoinTournamentPage() {
                 </p>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:grid-cols-4">
                 <div className="rounded-xl border border-arena-700 bg-arena-950 p-4">
                   <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                     Formato
@@ -136,7 +152,15 @@ export default function JoinTournamentPage() {
                   <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                     Participantes
                   </span>
-                  <strong className="mt-2 block text-white">{invite.totalParticipants}</strong>
+                  <strong className="mt-2 block text-white">{invite.currentParticipants}</strong>
+                </div>
+                <div className="rounded-xl border border-arena-700 bg-arena-950 p-4">
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                    Vagas
+                  </span>
+                  <strong className="mt-2 block text-white">
+                    {invite.remainingSlots ?? 'Ilimitadas'}
+                  </strong>
                 </div>
               </div>
 
@@ -202,7 +226,7 @@ export default function JoinTournamentPage() {
                 </form>
               ) : (
                 <div className="mt-6 rounded-xl border border-gold-700/40 bg-gold-700/10 px-4 py-3 text-sm text-gold-400">
-                  Este campeonato ja foi iniciado. As inscricoes nao estao mais abertas.
+                  {getClosedInviteMessage(invite)}
                 </div>
               )}
 

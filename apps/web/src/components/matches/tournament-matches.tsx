@@ -250,6 +250,14 @@ export function TournamentMatches({
   }, [loadMatches]);
 
   async function handleStartTournament() {
+    const confirmed = window.confirm(
+      'Deseja iniciar este campeonato? Depois disso os participantes nao poderao mais ser alterados.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setIsStarting(true);
     setFeedback(null);
 
@@ -307,6 +315,14 @@ export function TournamentMatches({
   }
 
   async function handleGenerateKnockoutStage() {
+    const confirmed = window.confirm(
+      'Deseja gerar a fase mata-mata agora? Use esta acao somente depois de conferir a classificacao final da Liga.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setIsGeneratingKnockoutStage(true);
     setFeedback(null);
 

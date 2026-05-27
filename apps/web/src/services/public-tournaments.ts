@@ -17,9 +17,14 @@ export type TournamentInvite = {
   id: string;
   name: string;
   slug: string;
+  inviteCode: string | null;
   description: string | null;
   format: TournamentFormat;
   status: TournamentStatus;
+  inviteEnabled: boolean;
+  maxParticipants: number | null;
+  currentParticipants: number;
+  remainingSlots: number | null;
   totalParticipants: number;
   canJoin: boolean;
 };

@@ -16,11 +16,14 @@ const formatLabels = {
   LEAGUE_KNOCKOUT: 'Liga + mata-mata',
 };
 
+const publicAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+
 export default function TournamentDetailsPage() {
   const params = useParams<{ id: string }>();
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [publicLinkFeedback, setPublicLinkFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadTournament() {
@@ -42,6 +45,20 @@ export default function TournamentDetailsPage() {
 
     void loadTournament();
   }, [params.id]);
+
+  async function copyPublicLink(slug: string) {
+    const path = `/public/tournaments/${slug}`;
+    const url =
+      publicAppUrl ?? (typeof window !== 'undefined' ? window.location.origin : '');
+    const publicUrl = `${url.replace(/\/$/, '')}${path}`;
+
+    try {
+      await window.navigator.clipboard.writeText(publicUrl);
+      setPublicLinkFeedback('Link publico copiado.');
+    } catch {
+      setPublicLinkFeedback('Nao foi possivel copiar automaticamente.');
+    }
+  }
 
   return (
     <AuthGuard>
@@ -73,12 +90,26 @@ export default function TournamentDetailsPage() {
                         {tournament.description ?? 'Campeonato sem descricao.'}
                       </p>
                     </div>
-                    <Link
-                      href={`/public/tournaments/${tournament.slug}`}
-                      className="rounded-xl border border-gold-500/40 px-4 py-2 text-center text-sm font-bold text-gold-400 transition hover:border-gold-400 hover:bg-gold-500/10 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
-                    >
-                      Ver pagina publica
-                    </Link>
+                    <div className="flex flex-col gap-2 sm:min-w-48">
+                      <Link
+                        href={`/public/tournaments/${tournament.slug}`}
+                        className="rounded-xl border border-gold-500/40 px-4 py-2 text-center text-sm font-bold text-gold-400 transition hover:border-gold-400 hover:bg-gold-500/10 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+                      >
+                        Ver pagina publica
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void copyPublicLink(tournament.slug)}
+                        className="rounded-xl border border-arena-700 px-4 py-2 text-center text-sm font-bold text-white transition hover:border-gold-500 hover:text-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-500/40"
+                      >
+                        Copiar link publico
+                      </button>
+                      {publicLinkFeedback ? (
+                        <span className="text-xs font-semibold text-gold-400">
+                          {publicLinkFeedback}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
 
@@ -94,9 +125,10 @@ export default function TournamentDetailsPage() {
                   />
                 </div>
 
-                {tournament.status === 'DRAFT' ? (
-                  <InviteLinkCard slug={tournament.slug} />
-                ) : null}
+                <InviteLinkCard
+                  tournament={tournament}
+                  onTournamentUpdated={setTournament}
+                />
 
                 <ParticipantsManager
                   tournamentId={tournament.id}

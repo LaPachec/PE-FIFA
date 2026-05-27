@@ -245,7 +245,9 @@ Crie um arquivo `.env` na raiz com base no `.env.example`.
 DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5433/fifa_tournament?schema=public"
 PORT=3333
 NODE_ENV=development
+JWT_SECRET="local-development-jwt-secret"
 NEXT_PUBLIC_API_URL="http://localhost:3333"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 Descrição das variáveis:
@@ -253,7 +255,9 @@ Descrição das variáveis:
 - `DATABASE_URL`: URL de conexão com o PostgreSQL usada pelo Prisma.
 - `PORT`: porta da API Express.
 - `NODE_ENV`: ambiente de execução.
+- `JWT_SECRET`: segredo usado para assinar tokens de autenticação.
 - `NEXT_PUBLIC_API_URL`: URL pública da API consumida pelo front-end.
+- `NEXT_PUBLIC_APP_URL`: URL pública do front-end usada para copiar links públicos e convites.
 
 ## Ambiente Local
 
@@ -417,3 +421,4 @@ Mais detalhes estão em [Ambiente de desenvolvimento](./docs/development-environ
 - [Regras de negócio](./docs/business-rules.md)
 - [Rotas da API](./docs/api-routes.md)
 - [Ambiente de desenvolvimento](./docs/development-environment.md)
+- [Deploy](./docs/deployment.md)
