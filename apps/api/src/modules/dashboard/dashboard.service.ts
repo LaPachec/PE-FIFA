@@ -2,6 +2,7 @@ import {
   prisma,
   type MatchPhase,
   type MatchStatus,
+  type Prisma,
   type TournamentFormat,
   type TournamentStatus,
 } from '@fifa-tournament-manager/database';
@@ -36,6 +37,39 @@ type DashboardTournament = {
   participants: DashboardParticipant[];
   matches: DashboardMatch[];
 };
+
+type DashboardTournamentPayload = Prisma.TournamentGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    slug: true;
+    description: true;
+    format: true;
+    status: true;
+    championParticipantId: true;
+    createdAt: true;
+    updatedAt: true;
+    participants: {
+      select: {
+        id: true;
+        name: true;
+        nickname: true;
+        teamName: true;
+      };
+    };
+    matches: {
+      select: {
+        id: true;
+        phase: true;
+        round: true;
+        status: true;
+        homeParticipantId: true;
+        awayParticipantId: true;
+        matchOrder: true;
+      };
+    };
+  };
+}>;
 
 type DashboardStats = {
   totalTournaments: number;
@@ -85,7 +119,7 @@ function getParticipantNameById(tournament: DashboardTournament) {
 
 export const dashboardService = {
   async getSummary(userId: string) {
-    const tournaments = await prisma.tournament.findMany({
+    const tournaments: DashboardTournamentPayload[] = await prisma.tournament.findMany({
       where: { ownerId: userId },
       orderBy: { updatedAt: 'desc' },
       select: {
@@ -124,24 +158,25 @@ export const dashboardService = {
     const stats = { ...emptyStats };
     stats.totalTournaments = tournaments.length;
 
-    const summaryTournaments = tournaments.map((tournament) => {
+    const summaryTournaments = tournaments.map((tournament: DashboardTournament) => {
       incrementStatusCounter(stats, tournament.status);
 
       const participantNameById = getParticipantNameById(tournament);
       const finishedMatches = tournament.matches.filter(
-        (match) => match.status === 'FINISHED',
+        (match: DashboardMatch) => match.status === 'FINISHED',
       ).length;
       const pendingMatches = tournament.matches.filter(
-        (match) => match.status === 'PENDING',
+        (match: DashboardMatch) => match.status === 'PENDING',
       ).length;
       const nextPendingMatch = tournament.matches.find(
-        (match) => match.status === 'PENDING',
+        (match: DashboardMatch) => match.status === 'PENDING',
       );
       const champion =
         tournament.championParticipantId === null
           ? null
           : tournament.participants.find(
-              (participant) => participant.id === tournament.championParticipantId,
+              (participant: DashboardParticipant) =>
+                participant.id === tournament.championParticipantId,
             ) ?? null;
 
       return {

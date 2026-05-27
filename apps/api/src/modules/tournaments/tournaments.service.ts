@@ -1,5 +1,11 @@
 import { randomBytes } from 'node:crypto';
-import { prisma, type MatchPhase, type TournamentFormat } from '@fifa-tournament-manager/database';
+import {
+  prisma,
+  type MatchPhase,
+  type MatchStatus,
+  type Prisma,
+  type TournamentFormat,
+} from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
 import { calculateLeagueStandings } from '../standings/standings.service.js';
 import type {
@@ -111,6 +117,12 @@ type GeneratedMatch = {
   awayParticipantId: string;
   status: 'PENDING';
   matchOrder: number;
+};
+
+type TournamentMatch = {
+  phase: MatchPhase;
+  round: number | null;
+  status: MatchStatus;
 };
 
 function createLeagueMatches(
@@ -408,7 +420,7 @@ export const tournamentsService = {
   },
 
   async start(id: string, ownerId: string) {
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const tournament = await transaction.tournament.findFirst({
         where: { id, ownerId },
         include: {
@@ -481,7 +493,7 @@ export const tournamentsService = {
   },
 
   async finish(id: string, ownerId: string) {
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const tournament = await transaction.tournament.findFirst({
         where: { id, ownerId },
         include: {
@@ -516,7 +528,7 @@ export const tournamentsService = {
       }
 
       const hasPendingMatches = tournament.matches.some(
-        (match) => match.status === 'PENDING',
+        (match: TournamentMatch) => match.status === 'PENDING',
       );
 
       if (hasPendingMatches) {
@@ -546,7 +558,7 @@ export const tournamentsService = {
   },
 
   async generateKnockoutStage(id: string, ownerId: string) {
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const tournament = await transaction.tournament.findFirst({
         where: { id, ownerId },
         include: {
@@ -581,14 +593,16 @@ export const tournamentsService = {
         throw new AppError('qualifiedCount is required for LEAGUE_KNOCKOUT tournaments', 400);
       }
 
-      const leagueMatches = tournament.matches.filter((match) => match.phase === 'LEAGUE');
+      const leagueMatches = tournament.matches.filter(
+        (match: TournamentMatch) => match.phase === 'LEAGUE',
+      );
 
       if (leagueMatches.length === 0) {
         throw new AppError('Tournament must have league matches before knockout stage', 400);
       }
 
       const hasPendingLeagueMatches = leagueMatches.some(
-        (match) => match.status === 'PENDING',
+        (match: TournamentMatch) => match.status === 'PENDING',
       );
 
       if (hasPendingLeagueMatches) {
@@ -596,7 +610,7 @@ export const tournamentsService = {
       }
 
       const hasKnockoutMatches = tournament.matches.some(
-        (match) => match.phase !== 'LEAGUE',
+        (match: TournamentMatch) => match.phase !== 'LEAGUE',
       );
 
       if (hasKnockoutMatches) {
@@ -613,7 +627,7 @@ export const tournamentsService = {
       }
 
       const nextRound =
-        Math.max(...leagueMatches.map((match) => match.round ?? 0), 0) + 1;
+        Math.max(...leagueMatches.map((match: TournamentMatch) => match.round ?? 0), 0) + 1;
       const matchesToCreate = createLeagueKnockoutStageMatches(
         id,
         qualifiedParticipants,

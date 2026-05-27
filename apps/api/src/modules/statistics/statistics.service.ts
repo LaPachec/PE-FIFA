@@ -1,4 +1,4 @@
-import { prisma } from '@fifa-tournament-manager/database';
+import { prisma, type MatchStatus } from '@fifa-tournament-manager/database';
 import { AppError } from '../../shared/errors/app-error.js';
 
 type StatisticsParticipant = {
@@ -21,6 +21,22 @@ type ParticipantStatistics = {
   goalsAgainst: number;
   goalDifference: number;
   points: number;
+};
+
+type ParticipantStatisticsMap = Record<string, ParticipantStatistics>;
+
+type StatisticsMatch = {
+  id: string;
+  status: MatchStatus;
+  homeParticipantId: string | null;
+  awayParticipantId: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
+type StatisticsTournament = {
+  participants: StatisticsParticipant[];
+  matches: StatisticsMatch[];
 };
 
 type MatchSummary = {
@@ -142,19 +158,27 @@ export const statisticsService = {
     }
 
     const participantNameById = new Map(
-      tournament.participants.map((participant) => [participant.id, participant.name]),
-    );
-    const statisticsByParticipantId = new Map(
-      tournament.participants.map((participant) => [
+      tournament.participants.map((participant: StatisticsParticipant) => [
         participant.id,
-        createParticipantStatistics(participant),
+        participant.name,
       ]),
     );
+    const typedTournament: StatisticsTournament = tournament;
+    const statisticsByParticipantId: ParticipantStatisticsMap =
+      typedTournament.participants.reduce<ParticipantStatisticsMap>(
+        (statisticsMap, participant: StatisticsParticipant) => {
+          statisticsMap[participant.id] = createParticipantStatistics(participant);
+          return statisticsMap;
+        },
+        {},
+      );
 
-    const finishedMatches = tournament.matches.filter(
-      (match) => match.status === 'FINISHED',
+    const finishedMatches = typedTournament.matches.filter(
+      (match: StatisticsMatch) => match.status === 'FINISHED',
     );
-    const pendingMatches = tournament.matches.filter((match) => match.status === 'PENDING');
+    const pendingMatches = typedTournament.matches.filter(
+      (match: StatisticsMatch) => match.status === 'PENDING',
+    );
 
     let totalGoals = 0;
     let highestScoringMatch: HighestScoringMatch | null = null;
@@ -170,8 +194,8 @@ export const statisticsService = {
         continue;
       }
 
-      const homeStatistics = statisticsByParticipantId.get(match.homeParticipantId);
-      const awayStatistics = statisticsByParticipantId.get(match.awayParticipantId);
+      const homeStatistics = statisticsByParticipantId[match.homeParticipantId];
+      const awayStatistics = statisticsByParticipantId[match.awayParticipantId];
 
       if (!homeStatistics || !awayStatistics) {
         continue;
@@ -183,7 +207,7 @@ export const statisticsService = {
       const matchTotalGoals = match.homeScore + match.awayScore;
       totalGoals += matchTotalGoals;
 
-      const matchSummary = {
+      const matchSummary: MatchSummary = {
         matchId: match.id,
         homeParticipantName:
           participantNameById.get(match.homeParticipantId) ?? 'Participante removido',
@@ -214,14 +238,17 @@ export const statisticsService = {
       }
     }
 
-    const participantStatistics = Array.from(statisticsByParticipantId.values()).sort(
-      (first, second) => first.name.localeCompare(second.name, 'pt-BR'),
+    const participantStatistics = (
+      Object.values(statisticsByParticipantId) as ParticipantStatistics[]
+    ).sort(
+      (first: ParticipantStatistics, second: ParticipantStatistics) =>
+        first.name.localeCompare(second.name, 'pt-BR'),
     );
     const hasFinishedMatches = finishedMatches.length > 0;
 
     return {
-      totalParticipants: tournament.participants.length,
-      totalMatches: tournament.matches.length,
+      totalParticipants: typedTournament.participants.length,
+      totalMatches: typedTournament.matches.length,
       finishedMatches: finishedMatches.length,
       pendingMatches: pendingMatches.length,
       totalGoals,

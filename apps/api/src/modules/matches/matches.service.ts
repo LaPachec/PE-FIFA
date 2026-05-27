@@ -268,7 +268,7 @@ export const matchesService = {
   },
 
   async updateResult(id: string, input: UpdateMatchResultInput) {
-    return prisma.$transaction(async (transaction) => {
+    return prisma.$transaction(async (transaction: Prisma.TransactionClient) => {
       const match = await transaction.match.findUnique({
         where: { id },
         include: {
