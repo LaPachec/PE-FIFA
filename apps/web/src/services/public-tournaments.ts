@@ -40,10 +40,18 @@ export type JoinTournamentResponse = {
   participant: Participant;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+function getApiUrl() {
+  if (!apiUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL nao esta configurada.');
+  }
+
+  return apiUrl;
+}
 
 export async function getPublicTournamentBySlug(slug: string) {
-  const response = await fetch(`${apiUrl}/public/tournaments/${slug}`, {
+  const response = await fetch(`${getApiUrl()}/public/tournaments/${slug}`, {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -63,7 +71,7 @@ export async function getPublicTournamentBySlug(slug: string) {
 }
 
 export async function getTournamentInvite(slug: string) {
-  const response = await fetch(`${apiUrl}/public/tournaments/${slug}/invite`, {
+  const response = await fetch(`${getApiUrl()}/public/tournaments/${slug}/invite`, {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -86,7 +94,7 @@ export async function joinTournamentByInvite(
   slug: string,
   payload: JoinTournamentPayload,
 ) {
-  const response = await fetch(`${apiUrl}/public/tournaments/${slug}/join`, {
+  const response = await fetch(`${getApiUrl()}/public/tournaments/${slug}/join`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

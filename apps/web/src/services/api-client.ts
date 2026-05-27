@@ -1,4 +1,4 @@
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const authTokenKey = 'fifa_tournament_manager_token';
 
 export function getStoredAuthToken() {
@@ -25,6 +25,10 @@ export async function request<TResponse>(
   path: string,
   init?: RequestInit,
 ): Promise<TResponse> {
+  if (!apiUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL nao esta configurada.');
+  }
+
   const response = await fetch(`${apiUrl}${path}`, {
     ...init,
     headers: {

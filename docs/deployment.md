@@ -55,16 +55,16 @@ Usando as variaveis de ambiente configuradas localmente:
 
 ```bash
 pnpm db:generate
-pnpm db:migrate:deploy
+pnpm db:deploy
 ```
 
 No Render, tambem e possivel rodar o comando em um job/manual shell usando a mesma `DATABASE_URL` de producao:
 
 ```bash
-pnpm db:migrate:deploy
+pnpm db:deploy
 ```
 
-Use `pnpm db:migrate` apenas em desenvolvimento local. Em producao, use `pnpm db:migrate:deploy`.
+Use `pnpm db:migrate` apenas em desenvolvimento local. Em producao, use `pnpm db:deploy`.
 
 ## Deploy da API no Render
 
@@ -126,7 +126,7 @@ pnpm build:web
 pnpm build:api
 pnpm start:api
 pnpm db:generate
-pnpm db:migrate:deploy
+pnpm db:deploy
 ```
 
 Tambem e possivel chamar pacotes diretamente:
@@ -135,7 +135,7 @@ Tambem e possivel chamar pacotes diretamente:
 pnpm --filter @fifa-tournament-manager/web build
 pnpm --filter @fifa-tournament-manager/api build
 pnpm --filter @fifa-tournament-manager/api start
-pnpm --filter @fifa-tournament-manager/database db:migrate:deploy
+pnpm --filter @fifa-tournament-manager/database deploy
 ```
 
 ## Validacao do fluxo em producao

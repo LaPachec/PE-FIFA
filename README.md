@@ -235,7 +235,7 @@ pnpm db:migrate
 Executar migrations em producao:
 
 ```bash
-pnpm db:migrate:deploy
+pnpm db:deploy
 ```
 
 Abrir Prisma Studio:
