@@ -442,9 +442,9 @@ export const tournamentsService = {
 
       if (
         (tournament.format === 'LEAGUE' || tournament.format === 'LEAGUE_KNOCKOUT') &&
-        tournament.participants.length < 3
+        tournament.participants.length < 2
       ) {
-        throw new AppError('Tournament must have at least 3 participants to start', 400);
+        throw new AppError('Tournament must have at least 2 active participants to start', 400);
       }
 
       if (tournament.format === 'LEAGUE_KNOCKOUT') {

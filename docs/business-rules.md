@@ -85,12 +85,14 @@ Regras:
 
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
-3. O campeonato precisa ter pelo menos 3 participantes ativos.
-4. Ao iniciar, o sistema gera partidas para todos os pares de participantes ativos.
-5. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
-6. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
-7. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
-8. O campeonato nao pode ser iniciado duas vezes.
+3. O campeonato precisa ter pelo menos 2 participantes ativos.
+4. Ao iniciar, o sistema gera partidas para todos os pares unicos de participantes ativos.
+5. Em jogo unico, uma liga com `N` participantes gera `N * (N - 1) / 2` partidas.
+6. Com 4 participantes, por exemplo, os confrontos sao `A x B`, `A x C`, `A x D`, `B x C`, `B x D` e `C x D`.
+7. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto, totalizando `N * (N - 1)` partidas.
+8. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+9. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+10. O campeonato nao pode ser iniciado duas vezes.
 
 ## Inicio de campeonatos liga + mata-mata
 
@@ -100,16 +102,17 @@ Regras:
 
 1. O campeonato precisa existir.
 2. O campeonato precisa estar com status `DRAFT`.
-3. O campeonato precisa ter pelo menos 3 participantes ativos.
+3. O campeonato precisa ter pelo menos 2 participantes ativos.
 4. `qualifiedCount` e obrigatorio.
 5. `qualifiedCount` deve ser `2`, `4`, `8` ou `16`.
 6. `qualifiedCount` nao pode ser maior que o numero de participantes.
-7. Ao iniciar, o sistema gera partidas para todos os pares de participantes ativos.
-8. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto.
-9. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
-10. A fase mata-mata nao e gerada nesta etapa.
-11. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
-12. O campeonato nao pode ser iniciado duas vezes.
+7. Ao iniciar, o sistema gera partidas para todos os pares unicos de participantes ativos.
+8. Em jogo unico, uma fase de liga com `N` participantes gera `N * (N - 1) / 2` partidas.
+9. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto, totalizando `N * (N - 1)` partidas.
+10. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+11. A fase mata-mata nao e gerada nesta etapa.
+12. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+13. O campeonato nao pode ser iniciado duas vezes.
 
 ## Geracao da fase mata-mata em liga + mata-mata
 
