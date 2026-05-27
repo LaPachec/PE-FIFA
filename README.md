@@ -178,6 +178,30 @@ Gerar build:
 pnpm build
 ```
 
+Gerar build apenas da API:
+
+```bash
+pnpm build:api
+```
+
+Gerar build apenas do front-end:
+
+```bash
+pnpm build:web
+```
+
+Iniciar a API em producao depois do build:
+
+```bash
+pnpm start:api
+```
+
+Iniciar o front-end em producao depois do build:
+
+```bash
+pnpm start:web
+```
+
 Executar lint:
 
 ```bash
@@ -206,6 +230,12 @@ Executar migration em desenvolvimento:
 
 ```bash
 pnpm db:migrate
+```
+
+Executar migrations em producao:
+
+```bash
+pnpm db:migrate:deploy
 ```
 
 Abrir Prisma Studio:
@@ -243,9 +273,10 @@ Crie um arquivo `.env` na raiz com base no `.env.example`.
 
 ```env
 DATABASE_URL="postgresql://fifa_user:fifa_password@localhost:5433/fifa_tournament?schema=public"
-PORT=3333
-NODE_ENV=development
 JWT_SECRET="local-development-jwt-secret"
+NODE_ENV=development
+PORT=3333
+CORS_ORIGIN="http://localhost:3000"
 NEXT_PUBLIC_API_URL="http://localhost:3333"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
@@ -256,6 +287,7 @@ Descrição das variáveis:
 - `PORT`: porta da API Express.
 - `NODE_ENV`: ambiente de execução.
 - `JWT_SECRET`: segredo usado para assinar tokens de autenticação.
+- `CORS_ORIGIN`: origem permitida para chamadas do front-end na API. Em producao, use a URL da Vercel.
 - `NEXT_PUBLIC_API_URL`: URL pública da API consumida pelo front-end.
 - `NEXT_PUBLIC_APP_URL`: URL pública do front-end usada para copiar links públicos e convites.
 

@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build:api": "turbo run build --filter=@fifa-tournament-manager/api...",
+    "build:web": "turbo run build --filter=@fifa-tournament-manager/web...",
+    "start:api": "pnpm --filter @fifa-tournament-manager/api start",
+    "start:web": "pnpm --filter @fifa-tournament-manager/web start",
     "lint": "turbo run lint",
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
@@ -15,6 +19,7 @@
     "docker:restart": "docker compose restart",
     "db:generate": "turbo run db:generate --filter=@fifa-tournament-manager/database",
     "db:migrate": "turbo run db:migrate --filter=@fifa-tournament-manager/database",
+    "db:migrate:deploy": "turbo run db:migrate:deploy --filter=@fifa-tournament-manager/database",
     "db:studio": "turbo run db:studio --filter=@fifa-tournament-manager/database",
     "db:reset": "turbo run db:reset --filter=@fifa-tournament-manager/database"
   },

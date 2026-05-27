@@ -1,59 +1,161 @@
-# Deploy
+# Deploy em producao
 
-Guia simples para publicar o FIFA Tournament Manager para uso com amigos.
+Este guia prepara o FIFA Tournament Manager para deploy separado:
 
-## Servicos necessarios
-
-- Front-end Next.js em uma plataforma como Vercel.
-- API Node.js/Express em uma plataforma que suporte processos Node.
-- PostgreSQL gerenciado.
+- Front-end Next.js na Vercel.
+- API Node.js/Express no Render.
+- PostgreSQL no Supabase.
 
 ## Variaveis de ambiente
 
-Configure na API:
+### API no Render
+
+Configure no servico da API:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
-PORT=3333
+JWT_SECRET="gere-um-segredo-forte"
 NODE_ENV=production
-JWT_SECRET="use-um-segredo-forte"
+CORS_ORIGIN="https://seu-front.vercel.app"
 ```
 
-Configure no front-end:
+O `PORT` e definido automaticamente pelo Render. Localmente, a API usa fallback para `3333`.
+
+### Front-end na Vercel
+
+Configure no projeto web:
 
 ```env
-NEXT_PUBLIC_API_URL="https://sua-api.exemplo.com"
-NEXT_PUBLIC_APP_URL="https://seu-front.exemplo.com"
+NEXT_PUBLIC_API_URL="https://sua-api.onrender.com"
+NEXT_PUBLIC_APP_URL="https://seu-front.vercel.app"
 ```
 
-`NEXT_PUBLIC_APP_URL` e usado para copiar links publicos e links de convite com o dominio correto.
+`NEXT_PUBLIC_APP_URL` e usado para gerar links publicos de campeonato e links de convite.
 
-## Banco de dados
+## Banco PostgreSQL no Supabase
 
-Depois de configurar `DATABASE_URL`, execute:
+1. Crie um projeto no Supabase.
+2. Acesse as configuracoes de banco e copie a connection string do PostgreSQL.
+3. Substitua usuario, senha, host, porta e database.
+4. Use a URL final em `DATABASE_URL` no Render.
+
+Exemplo:
+
+```env
+DATABASE_URL="postgresql://postgres:SENHA@db.PROJECT.supabase.co:5432/postgres?schema=public"
+```
+
+Se o Supabase recomendar SSL na connection string do seu projeto, mantenha os parametros fornecidos pela propria plataforma.
+
+## Prisma em producao
+
+Antes de publicar a API pela primeira vez, execute as migrations no banco de producao.
+
+Usando as variaveis de ambiente configuradas localmente:
 
 ```bash
 pnpm db:generate
-pnpm db:migrate
+pnpm db:migrate:deploy
 ```
 
-## Build
-
-Na raiz do monorepo:
+No Render, tambem e possivel rodar o comando em um job/manual shell usando a mesma `DATABASE_URL` de producao:
 
 ```bash
-pnpm install
-pnpm typecheck
-pnpm lint
-pnpm build
+pnpm db:migrate:deploy
 ```
+
+Use `pnpm db:migrate` apenas em desenvolvimento local. Em producao, use `pnpm db:migrate:deploy`.
+
+## Deploy da API no Render
+
+Crie um Web Service apontando para o repositorio.
+
+Configuracao recomendada para monorepo:
+
+- Root Directory: raiz do repositorio.
+- Build Command: `pnpm install --frozen-lockfile && pnpm db:generate && pnpm build:api`
+- Start Command: `pnpm start:api`
+- Health Check Path: `/health`
+
+Variaveis obrigatorias:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `NODE_ENV=production`
+- `CORS_ORIGIN=https://seu-front.vercel.app`
+
+Depois do deploy, valide:
+
+```bash
+curl https://sua-api.onrender.com/health
+```
+
+Resposta esperada:
+
+```json
+{
+  "status": "ok",
+  "service": "fifa-tournament-manager-api"
+}
+```
+
+## Deploy do front-end na Vercel
+
+Crie um projeto na Vercel apontando para o mesmo repositorio.
+
+Configuracao recomendada para monorepo:
+
+- Root Directory: `apps/web`
+- Framework Preset: Next.js
+- Install Command: `cd ../.. && pnpm install --frozen-lockfile`
+- Build Command: `cd ../.. && pnpm build:web`
+
+Variaveis obrigatorias:
+
+- `NEXT_PUBLIC_API_URL=https://sua-api.onrender.com`
+- `NEXT_PUBLIC_APP_URL=https://seu-front.vercel.app`
+
+Se preferir manter o Root Directory na raiz do repositorio, use:
+
+- Build Command: `pnpm build:web`
+
+## Comandos uteis do monorepo
+
+```bash
+pnpm build:web
+pnpm build:api
+pnpm start:api
+pnpm db:generate
+pnpm db:migrate:deploy
+```
+
+Tambem e possivel chamar pacotes diretamente:
+
+```bash
+pnpm --filter @fifa-tournament-manager/web build
+pnpm --filter @fifa-tournament-manager/api build
+pnpm --filter @fifa-tournament-manager/api start
+pnpm --filter @fifa-tournament-manager/database db:migrate:deploy
+```
+
+## Validacao do fluxo em producao
+
+1. Acesse `https://sua-api.onrender.com/health`.
+2. Acesse o front na Vercel.
+3. Crie uma conta.
+4. Crie um campeonato.
+5. Copie e abra o link de convite em uma janela anonima.
+6. Inscreva um participante e aprove no painel privado.
+7. Inicie o campeonato.
+8. Registre resultados, incluindo penaltis em mata-mata quando necessario.
+9. Confira classificacao, estatisticas, campeao e pagina publica.
 
 ## Checklist antes de compartilhar
 
-- Criar uma conta.
-- Criar um campeonato de teste.
-- Copiar e abrir o link de convite em janela anonima.
-- Inscrever um participante e aprovar.
-- Iniciar o campeonato.
-- Registrar resultados, incluindo um mata-mata decidido por penaltis.
-- Abrir a pagina publica sem login.
+- `CORS_ORIGIN` aponta para o dominio real da Vercel.
+- `NEXT_PUBLIC_API_URL` aponta para a API real do Render.
+- `NEXT_PUBLIC_APP_URL` aponta para o front real da Vercel.
+- Migrations foram aplicadas no Supabase.
+- `/health` responde em producao.
+- Fluxos publicos funcionam sem login.
+- Paginas privadas redirecionam usuarios sem token para `/login`.

@@ -12,7 +12,25 @@ import { requireAuth } from './shared/middlewares/require-auth.js';
 
 export const app = express();
 
-app.use(cors());
+const corsOrigin =
+  process.env.CORS_ORIGIN ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000');
+const allowedCorsOrigins = corsOrigin
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedCorsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
+  }),
+);
 app.use(express.json());
 
 app.get('/health', (_request, response) => {
