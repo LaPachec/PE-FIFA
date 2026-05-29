@@ -12,8 +12,9 @@ import { requireAuth } from './shared/middlewares/require-auth.js';
 
 export const app = express();
 
-const corsOrigin =
-  process.env.CORS_ORIGIN ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000');
+const isProduction = process.env.NODE_ENV === 'production';
+const defaultCorsOrigin = isProduction ? '' : 'http://localhost:3000';
+const corsOrigin = process.env.CORS_ORIGIN ?? defaultCorsOrigin;
 const allowedCorsOrigins = corsOrigin
   .split(',')
   .map((origin) => origin.trim())
@@ -22,12 +23,18 @@ const allowedCorsOrigins = corsOrigin
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedCorsOrigins.includes(origin)) {
+      if (!origin) {
         callback(null, true);
         return;
       }
 
-      callback(new Error('Not allowed by CORS'));
+      if (allowedCorsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      console.warn(`Blocked CORS request from origin: ${origin}`);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
     },
   }),
 );

@@ -16,10 +16,11 @@ Configure no servico da API:
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 JWT_SECRET="gere-um-segredo-forte"
 NODE_ENV=production
-CORS_ORIGIN="https://seu-front.vercel.app"
+CORS_ORIGIN="https://seu-front.vercel.app,https://seu-front-git-master-usuario.vercel.app"
 ```
 
 O `PORT` e definido automaticamente pelo Render. Localmente, a API usa fallback para `3333`.
+`CORS_ORIGIN` aceita multiplas origens separadas por virgula. Nao use espacos como parte das URLs; a API aplica `trim`, mas o ideal e manter a lista limpa.
 
 ### Front-end na Vercel
 
@@ -82,9 +83,11 @@ Variaveis obrigatorias:
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `NODE_ENV=production`
-- `CORS_ORIGIN=https://seu-front.vercel.app`
+- `CORS_ORIGIN=https://seu-front.vercel.app,https://seu-front-git-master-usuario.vercel.app`
 
 O `PORT` nao precisa ser configurado manualmente. O Render injeta essa variavel no ambiente do servico.
+
+Em producao, a API aceita apenas origens listadas em `CORS_ORIGIN`. Chamadas sem header `Origin`, como health checks do Render, `curl` e chamadas server-to-server, continuam permitidas.
 
 ## Deploy da API no Render com `render.yaml`
 
@@ -105,11 +108,13 @@ As variaveis abaixo ficam com `sync: false` e devem ser preenchidas manualmente 
 - `JWT_SECRET`
 - `CORS_ORIGIN`
 
-Use `CORS_ORIGIN` com a URL final do front na Vercel, por exemplo:
+Use `CORS_ORIGIN` com a URL final do front na Vercel. Se tambem quiser permitir previews ou o dominio de branch da Vercel, informe todas as origens separadas por virgula:
 
 ```env
-CORS_ORIGIN="https://seu-front.vercel.app"
+CORS_ORIGIN="https://pe-fifa-web.vercel.app,https://pe-fifa-web-git-master-lapachec.vercel.app"
 ```
+
+Quando uma origem nao listada tentar chamar a API, o Render registrara um log como `Blocked CORS request from origin: https://exemplo.com`, sem expor variaveis sensiveis.
 
 Depois do deploy, valide:
 
@@ -197,7 +202,7 @@ pnpm --filter @fifa-tournament-manager/database deploy
 
 ## Checklist antes de compartilhar
 
-- `CORS_ORIGIN` aponta para o dominio real da Vercel.
+- `CORS_ORIGIN` aponta para todos os dominios da Vercel que devem chamar a API, separados por virgula.
 - `NEXT_PUBLIC_API_URL` aponta para a API real do Render.
 - `NEXT_PUBLIC_APP_URL` aponta para o front real da Vercel.
 - `DATABASE_URL` no Render aponta para o banco Supabase correto.
