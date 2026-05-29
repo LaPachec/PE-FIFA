@@ -29,9 +29,11 @@ Configure no projeto web:
 ```env
 NEXT_PUBLIC_API_URL="https://sua-api.onrender.com"
 NEXT_PUBLIC_APP_URL="https://seu-front.vercel.app"
+RENDER_API_URL="https://fifa-tournament-api.onrender.com"
 ```
 
 `NEXT_PUBLIC_APP_URL` e usado para gerar links publicos de campeonato e links de convite.
+`RENDER_API_URL` e usado pela rota server-side de keep-alive da Vercel para chamar o `/health` da API no Render.
 
 ## Banco PostgreSQL no Supabase
 
@@ -151,7 +153,42 @@ Se preferir manter o Root Directory na raiz do repositorio, use:
 
 - Build Command: `pnpm build:web`
 
-Nao ha `vercel.json` obrigatorio neste projeto. Para este monorepo, a configuracao mais clara e definir o Root Directory como `apps/web` no painel da Vercel e manter as variaveis de ambiente do front no proprio projeto da Vercel.
+Como o Root Directory da Vercel deve ser `apps/web`, o arquivo opcional `apps/web/vercel.json` configura um cron para chamar `/api/keep-api-awake` a cada 10 minutos.
+
+## Keep-alive da API no Render
+
+O plano gratuito do Render pode colocar a API para dormir apos um periodo de inatividade. Para reduzir esse efeito, o front na Vercel possui uma rota server-side:
+
+```txt
+GET /api/keep-api-awake
+```
+
+Essa rota chama:
+
+```txt
+${RENDER_API_URL}/health
+```
+
+No deploy atual, configure na Vercel:
+
+```env
+RENDER_API_URL="https://fifa-tournament-api.onrender.com"
+```
+
+O cron fica em `apps/web/vercel.json`:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/keep-api-awake",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
+```
+
+Esse keep-alive nao substitui um plano pago do Render ou uma estrategia propria de disponibilidade para producao real. Ele apenas ajuda a manter a API aquecida em ambientes de baixo trafego.
 
 ## Comandos de build e start por app
 
@@ -205,6 +242,7 @@ pnpm --filter @fifa-tournament-manager/database deploy
 - `CORS_ORIGIN` aponta para todos os dominios da Vercel que devem chamar a API, separados por virgula.
 - `NEXT_PUBLIC_API_URL` aponta para a API real do Render.
 - `NEXT_PUBLIC_APP_URL` aponta para o front real da Vercel.
+- `RENDER_API_URL` aponta para a API real do Render sem barra final.
 - `DATABASE_URL` no Render aponta para o banco Supabase correto.
 - `JWT_SECRET` foi configurado com um valor forte e privado.
 - Migrations foram aplicadas no Supabase.
