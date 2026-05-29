@@ -13,6 +13,10 @@ tournamentParticipantsRouter.get(
   '/pending',
   asyncHandler(participantsController.listPendingByTournament),
 );
+tournamentParticipantsRouter.patch(
+  '/pending/approve-all',
+  asyncHandler(participantsController.approveAllPending),
+);
 tournamentParticipantsRouter.post('/', asyncHandler(participantsController.create));
 
 participantsRouter.patch('/:id/approve', asyncHandler(participantsController.approve));

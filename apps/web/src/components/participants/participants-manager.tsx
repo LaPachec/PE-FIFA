@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  approveAllPendingParticipants,
   approveParticipant,
   createParticipant,
   deleteParticipant,
@@ -50,6 +51,7 @@ export function ParticipantsManager({
   const [editingForm, setEditingForm] = useState<ParticipantFormState>(emptyForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isApprovingAll, setIsApprovingAll] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
     id: string;
     type: 'approve' | 'reject';
@@ -200,6 +202,34 @@ export function ParticipantsManager({
     }
   }
 
+  async function handleApproveAllPending() {
+    const confirmed = window.confirm(
+      'Deseja aprovar todas as inscricoes pendentes deste campeonato?',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setFeedback(null);
+    setIsApprovingAll(true);
+
+    try {
+      const approvedParticipants = await approveAllPendingParticipants(tournamentId);
+      setParticipants(approvedParticipants);
+      setPendingParticipants([]);
+      setFeedback({ type: 'success', message: 'Todas as inscricoes pendentes foram aprovadas.' });
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        message:
+          error instanceof Error ? error.message : 'Nao foi possivel aprovar as inscricoes.',
+      });
+    } finally {
+      setIsApprovingAll(false);
+    }
+  }
+
   async function handleReject(participantId: string) {
     setFeedback(null);
     setPendingAction({ id: participantId, type: 'reject' });
@@ -241,41 +271,49 @@ export function ParticipantsManager({
           Este campeonato ja foi iniciado. Os participantes nao podem mais ser alterados.
         </div>
       ) : (
-        <form
-          onSubmit={handleCreate}
-          className="grid gap-4 rounded-xl border border-arena-700 bg-arena-850 p-5 lg:grid-cols-[1fr_1fr_1fr_auto]"
-        >
-          <input
-            value={form.name}
-            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
-            placeholder="Nome"
-            required
-          />
-          <input
-            value={form.nickname}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, nickname: event.target.value }))
-            }
-            className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
-            placeholder="Apelido"
-          />
-          <input
-            value={form.teamName}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, teamName: event.target.value }))
-            }
-            className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
-            placeholder="Time"
-          />
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="rounded-xl bg-gold-500 px-5 py-3 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+        <section className="rounded-xl border border-arena-700 bg-arena-850 p-5">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-white">Adicionar participante manualmente</h3>
+            <p className="mt-1 text-sm text-zinc-400">
+              Use esta opcao para cadastrar jogadores diretamente, sem link de convite.
+            </p>
+          </div>
+          <form
+            onSubmit={handleCreate}
+            className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto]"
           >
-            Adicionar
-          </button>
-        </form>
+            <input
+              value={form.name}
+              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
+              placeholder="Nome"
+              required
+            />
+            <input
+              value={form.nickname}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, nickname: event.target.value }))
+              }
+              className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
+              placeholder="Apelido"
+            />
+            <input
+              value={form.teamName}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, teamName: event.target.value }))
+              }
+              className="rounded-xl border border-arena-700 bg-arena-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-gold-500"
+              placeholder="Time"
+            />
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="rounded-xl bg-gold-500 px-5 py-3 text-sm font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Adicionar
+            </button>
+          </form>
+        </section>
       )}
 
       {feedback ? (
@@ -299,9 +337,21 @@ export function ParticipantsManager({
                 Aprove ou rejeite participantes inscritos pelo link de convite.
               </p>
             </div>
-            <span className="inline-flex w-fit rounded-full border border-gold-500/30 bg-gold-500/10 px-3 py-1 text-xs font-bold text-gold-400">
-              {pendingParticipants.length} pendente{pendingParticipants.length === 1 ? '' : 's'}
-            </span>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex w-fit rounded-full border border-gold-500/30 bg-gold-500/10 px-3 py-1 text-xs font-bold text-gold-400">
+                {pendingParticipants.length} pendente{pendingParticipants.length === 1 ? '' : 's'}
+              </span>
+              {pendingParticipants.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => void handleApproveAllPending()}
+                  disabled={isApprovingAll || pendingAction !== null}
+                  className="rounded-full bg-gold-500 px-3 py-1 text-xs font-bold text-arena-950 transition hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isApprovingAll ? 'Aprovando...' : 'Aprovar todos'}
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="mt-5">

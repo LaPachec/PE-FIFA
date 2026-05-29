@@ -87,12 +87,14 @@ Regras:
 2. O campeonato precisa estar com status `DRAFT`.
 3. O campeonato precisa ter pelo menos 2 participantes ativos.
 4. Ao iniciar, o sistema gera partidas para todos os pares unicos de participantes ativos.
-5. Em jogo unico, uma liga com `N` participantes gera `N * (N - 1) / 2` partidas.
-6. Com 4 participantes, por exemplo, os confrontos sao `A x B`, `A x C`, `A x D`, `B x C`, `B x D` e `C x D`.
-7. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto, totalizando `N * (N - 1)` partidas.
-8. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
-9. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
-10. O campeonato nao pode ser iniciado duas vezes.
+5. A ordem dos confrontos e embaralhada antes da geracao para evitar uma tabela sempre sequencial.
+6. As rodadas sao balanceadas: dentro da mesma rodada, um participante aparece no maximo uma vez.
+7. Em jogo unico, uma liga com `N` participantes gera `N * (N - 1) / 2` partidas.
+8. Com 4 participantes, por exemplo, os confrontos sao `A x B`, `A x C`, `A x D`, `B x C`, `B x D` e `C x D`, em ordem variavel.
+9. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto, totalizando `N * (N - 1)` partidas.
+10. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+11. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+12. O campeonato nao pode ser iniciado duas vezes.
 
 ## Inicio de campeonatos liga + mata-mata
 
@@ -107,12 +109,14 @@ Regras:
 5. `qualifiedCount` deve ser `2`, `4`, `8` ou `16`.
 6. `qualifiedCount` nao pode ser maior que o numero de participantes.
 7. Ao iniciar, o sistema gera partidas para todos os pares unicos de participantes ativos.
-8. Em jogo unico, uma fase de liga com `N` participantes gera `N * (N - 1) / 2` partidas.
-9. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto, totalizando `N * (N - 1)` partidas.
-10. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
-11. A fase mata-mata nao e gerada nesta etapa.
-12. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
-13. O campeonato nao pode ser iniciado duas vezes.
+8. A ordem dos confrontos e embaralhada antes da geracao para evitar uma tabela sempre sequencial.
+9. As rodadas sao balanceadas: dentro da mesma rodada, um participante aparece no maximo uma vez.
+10. Em jogo unico, uma fase de liga com `N` participantes gera `N * (N - 1) / 2` partidas.
+11. Se `isTwoLegged` for `true`, o sistema gera tambem a partida inversa de cada confronto, totalizando `N * (N - 1)` partidas.
+12. Todas as partidas geradas usam `phase = LEAGUE` e `status = PENDING`.
+13. A fase mata-mata nao e gerada nesta etapa.
+14. A geracao das partidas e a troca de status para `IN_PROGRESS` acontecem na mesma transaction.
+15. O campeonato nao pode ser iniciado duas vezes.
 
 ## Geracao da fase mata-mata em liga + mata-mata
 
@@ -132,6 +136,7 @@ Regras:
 10. Ao gerar, o campeonato muda para `KNOCKOUT_STAGE`.
 11. A geracao das partidas e a troca de status acontecem na mesma transaction.
 12. A fase mata-mata usa a mesma progressao automatica do formato `KNOCKOUT`.
+13. Se o campeonato tiver disputa de terceiro lugar, ela e gerada junto com a final depois que as semifinais terminam.
 
 Fases geradas:
 
@@ -225,9 +230,11 @@ Regras:
 2. Vencedores sao agrupados de dois em dois.
 3. O primeiro vencedor do par vira mandante.
 4. O segundo vencedor do par vira visitante.
-5. Quando a `FINAL` termina, o campeonato passa para `FINISHED`.
-6. O campeao da final e salvo em `championParticipantId`.
-7. O participante campeao recebe status `CHAMPION`.
+5. Quando a semifinal termina e `hasThirdPlaceMatch` esta ativo, os perdedores das semifinais geram a partida `THIRD_PLACE`.
+6. Quando nao ha disputa de terceiro lugar, a `FINAL` finalizada encerra o campeonato.
+7. Quando ha disputa de terceiro lugar, o campeonato so encerra depois que `FINAL` e `THIRD_PLACE` estiverem finalizadas.
+8. O campeao da final e salvo em `championParticipantId`.
+9. O participante campeao recebe status `CHAMPION`.
 
 ## Classificacao da liga
 
@@ -331,8 +338,9 @@ Regras:
 22. Apenas o dono do campeonato pode aprovar ou rejeitar inscricoes.
 23. Ao aprovar, o participante passa para `ACTIVE`.
 24. Ao rejeitar, o participante passa para `REJECTED`.
-25. Neste MVP, e permitido iniciar um campeonato com inscricoes `PENDING`; elas sao ignoradas e apenas participantes `ACTIVE` entram na geracao de partidas.
-26. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
+25. O dono pode aprovar todas as inscricoes pendentes de uma vez enquanto o campeonato esta em `DRAFT`.
+26. Neste MVP, e permitido iniciar um campeonato com inscricoes `PENDING`; elas sao ignoradas e apenas participantes `ACTIVE` entram na geracao de partidas.
+27. Dados sensiveis do dono do campeonato nao sao retornados nas rotas de convite.
 
 ## Decisoes pendentes
 

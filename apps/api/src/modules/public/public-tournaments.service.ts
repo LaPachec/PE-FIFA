@@ -79,7 +79,7 @@ export const publicTournamentsService = {
         updatedAt: true,
         participants: {
           where: {
-            status: { in: ['ACTIVE', 'CHAMPION'] },
+            status: { in: ['ACTIVE', 'ELIMINATED', 'CHAMPION'] },
           },
           orderBy: { name: 'asc' },
           select: {

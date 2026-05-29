@@ -11,6 +11,7 @@ import { getParticipants, type Participant } from '@/services/participants';
 import {
   finishTournament,
   generateKnockoutStage,
+  getTournament,
   startTournament,
   type Tournament,
   type TournamentFormat,
@@ -417,7 +418,7 @@ export function TournamentMatches({
     try {
       const shouldSendPenaltyScores =
         isKnockoutPhase(currentMatch.phase) && hasNormalTimeTie(resultForm);
-      const match = await updateMatchResult(matchId, {
+      await updateMatchResult(matchId, {
         homeScore: Number(resultForm.homeScore),
         awayScore: Number(resultForm.awayScore),
         ...(shouldSendPenaltyScores
@@ -428,19 +429,14 @@ export function TournamentMatches({
           : {}),
       });
 
-      if (
-        (tournamentFormat === 'KNOCKOUT' || tournamentFormat === 'LEAGUE_KNOCKOUT') &&
-        match.phase === 'FINAL' &&
-        match.winnerParticipantId
-      ) {
-        setCurrentStatus('FINISHED');
-        setCurrentChampionParticipantId(match.winnerParticipantId);
-      }
-
+      const updatedTournament = await getTournament(tournamentId);
+      setCurrentStatus(updatedTournament.status);
+      setCurrentChampionParticipantId(updatedTournament.championParticipantId);
       await loadMatches();
       setEditingResultMatchId(null);
       setResultForm(emptyResultForm);
       onMatchesChanged?.();
+      onTournamentStatusChanged?.(updatedTournament);
       router.refresh();
       setFeedback({ type: 'success', message: 'Resultado salvo com sucesso.' });
     } catch (error) {

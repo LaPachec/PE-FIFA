@@ -107,6 +107,16 @@ function getNextKnockoutPhase(phase: MatchPhase) {
   return null;
 }
 
+type NextKnockoutMatchData = {
+  tournamentId: string;
+  phase: MatchPhase;
+  round: number;
+  homeParticipantId: string;
+  awayParticipantId: string;
+  status: 'PENDING';
+  matchOrder: number;
+};
+
 async function finishKnockoutTournament(
   transaction: Prisma.TransactionClient,
   tournamentId: string,
@@ -126,23 +136,144 @@ async function finishKnockoutTournament(
   });
 }
 
+async function finishKnockoutTournamentIfReady(
+  transaction: Prisma.TransactionClient,
+  tournamentId: string,
+) {
+  const finalMatch = await transaction.match.findFirst({
+    where: {
+      tournamentId,
+      phase: 'FINAL',
+      status: 'FINISHED',
+    },
+    select: {
+      winnerParticipantId: true,
+    },
+  });
+
+  if (!finalMatch?.winnerParticipantId) {
+    return;
+  }
+
+  const pendingThirdPlaceMatch = await transaction.match.findFirst({
+    where: {
+      tournamentId,
+      phase: 'THIRD_PLACE',
+      status: 'PENDING',
+    },
+    select: { id: true },
+  });
+
+  if (pendingThirdPlaceMatch) {
+    return;
+  }
+
+  await finishKnockoutTournament(transaction, tournamentId, finalMatch.winnerParticipantId);
+}
+
+async function upsertKnockoutMatch(
+  transaction: Prisma.TransactionClient,
+  matchData: NextKnockoutMatchData,
+) {
+  const existingMatch = await transaction.match.findFirst({
+    where: {
+      tournamentId: matchData.tournamentId,
+      phase: matchData.phase,
+      round: matchData.round,
+      matchOrder: matchData.matchOrder,
+    },
+  });
+
+  if (!existingMatch) {
+    await transaction.match.create({ data: matchData });
+    return;
+  }
+
+  if (existingMatch.status !== 'PENDING') {
+    const hasDifferentParticipants =
+      existingMatch.homeParticipantId !== matchData.homeParticipantId ||
+      existingMatch.awayParticipantId !== matchData.awayParticipantId;
+
+    if (hasDifferentParticipants) {
+      throw new AppError('Cannot update winners because the next phase has started', 409);
+    }
+
+    return;
+  }
+
+  await transaction.match.update({
+    where: { id: existingMatch.id },
+    data: {
+      homeParticipantId: matchData.homeParticipantId,
+      awayParticipantId: matchData.awayParticipantId,
+    },
+  });
+}
+
 async function upsertNextKnockoutPhase(
   transaction: Prisma.TransactionClient,
   tournamentId: string,
   currentPhase: MatchPhase,
   currentRound: number,
   winnerParticipantIds: string[],
+  loserParticipantIds: string[],
 ) {
+  if (currentPhase === 'FINAL' || currentPhase === 'THIRD_PLACE') {
+    await finishKnockoutTournamentIfReady(transaction, tournamentId);
+    return;
+  }
+
+  const tournament = await transaction.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { hasThirdPlaceMatch: true },
+  });
+
+  if (!tournament) {
+    throw new AppError('Tournament not found', 404);
+  }
+
+  if (currentPhase === 'SEMI_FINAL' && tournament.hasThirdPlaceMatch) {
+    const [firstFinalist, secondFinalist] = winnerParticipantIds;
+    const [firstThirdPlaceParticipant, secondThirdPlaceParticipant] = loserParticipantIds;
+
+    if (
+      !firstFinalist ||
+      !secondFinalist ||
+      !firstThirdPlaceParticipant ||
+      !secondThirdPlaceParticipant
+    ) {
+      throw new AppError('Cannot generate final matches without all semifinal results', 409);
+    }
+
+    const nextRound = currentRound + 1;
+
+    await upsertKnockoutMatch(transaction, {
+      tournamentId,
+      phase: 'FINAL',
+      round: nextRound,
+      homeParticipantId: firstFinalist,
+      awayParticipantId: secondFinalist,
+      status: 'PENDING',
+      matchOrder: 1,
+    });
+
+    await upsertKnockoutMatch(transaction, {
+      tournamentId,
+      phase: 'THIRD_PLACE',
+      round: nextRound,
+      homeParticipantId: firstThirdPlaceParticipant,
+      awayParticipantId: secondThirdPlaceParticipant,
+      status: 'PENDING',
+      matchOrder: 1,
+    });
+
+    return;
+  }
+
   const nextPhase = getNextKnockoutPhase(currentPhase);
 
   if (!nextPhase) {
-    const championParticipantId = winnerParticipantIds[0];
-
-    if (!championParticipantId) {
-      throw new AppError('Tournament champion could not be determined', 400);
-    }
-
-    await finishKnockoutTournament(transaction, tournamentId, championParticipantId);
+    await finishKnockoutTournamentIfReady(transaction, tournamentId);
     return;
   }
 
@@ -156,7 +287,7 @@ async function upsertNextKnockoutPhase(
     orderBy: { matchOrder: 'asc' },
   });
 
-  const nextMatchesData = [];
+  const nextMatchesData: NextKnockoutMatchData[] = [];
 
   for (let index = 0; index < winnerParticipantIds.length; index += 2) {
     const homeParticipantId = winnerParticipantIds[index];
@@ -240,6 +371,15 @@ async function progressKnockoutIfPhaseFinished(
 
     return match.winnerParticipantId;
   });
+  const loserParticipantIds = phaseMatches.map((match) => {
+    if (!match.homeParticipantId || !match.awayParticipantId || !match.winnerParticipantId) {
+      throw new AppError('Cannot progress knockout phase without all participants', 409);
+    }
+
+    return match.winnerParticipantId === match.homeParticipantId
+      ? match.awayParticipantId
+      : match.homeParticipantId;
+  });
 
   await upsertNextKnockoutPhase(
     transaction,
@@ -247,6 +387,7 @@ async function progressKnockoutIfPhaseFinished(
     phase,
     round,
     winnerParticipantIds,
+    loserParticipantIds,
   );
 }
 

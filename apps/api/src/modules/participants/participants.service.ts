@@ -184,7 +184,7 @@ export const participantsService = {
     }
 
     return prisma.participant.findMany({
-      where: { tournamentId, status: 'ACTIVE' },
+      where: { tournamentId, status: { in: ['ACTIVE', 'ELIMINATED', 'CHAMPION'] } },
       orderBy: { createdAt: 'asc' },
     });
   },
@@ -266,6 +266,35 @@ export const participantsService = {
     return prisma.participant.update({
       where: { id },
       data: { status: 'ACTIVE' },
+    });
+  },
+
+  async approveAllPending(tournamentId: string, userId: string) {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: tournamentId },
+      select: { id: true, ownerId: true, status: true },
+    });
+
+    if (!tournament) {
+      throw new AppError('Tournament not found', 404);
+    }
+
+    if (tournament.ownerId !== userId) {
+      throw new AppError('You do not have permission to manage this tournament', 403);
+    }
+
+    if (tournament.status !== 'DRAFT') {
+      throw new AppError('Pending participants can only be approved while tournament is in DRAFT status', 409);
+    }
+
+    await prisma.participant.updateMany({
+      where: { tournamentId, status: 'PENDING' },
+      data: { status: 'ACTIVE' },
+    });
+
+    return prisma.participant.findMany({
+      where: { tournamentId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
     });
   },
 

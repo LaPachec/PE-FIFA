@@ -132,35 +132,72 @@ function createLeagueMatches(
 ) {
   const matchesToCreate: GeneratedMatch[] = [];
   let matchOrder = 1;
+  const scheduledParticipants = [...participants];
 
-  for (let homeIndex = 0; homeIndex < participants.length; homeIndex += 1) {
-    for (let awayIndex = homeIndex + 1; awayIndex < participants.length; awayIndex += 1) {
-      const homeParticipant = participants[homeIndex];
-      const awayParticipant = participants[awayIndex];
+  for (let index = scheduledParticipants.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    const currentParticipant = scheduledParticipants[index];
+    scheduledParticipants[index] = scheduledParticipants[randomIndex];
+    scheduledParticipants[randomIndex] = currentParticipant;
+  }
 
-      matchesToCreate.push({
+  const participantsWithBye: Array<MatchParticipant | null> =
+    scheduledParticipants.length % 2 === 0
+      ? scheduledParticipants
+      : [...scheduledParticipants, null];
+  const roundsCount = participantsWithBye.length - 1;
+  const matchesPerRound = participantsWithBye.length / 2;
+  const firstLegMatches: GeneratedMatch[] = [];
+
+  for (let roundIndex = 0; roundIndex < roundsCount; roundIndex += 1) {
+    for (let pairIndex = 0; pairIndex < matchesPerRound; pairIndex += 1) {
+      const firstParticipant = participantsWithBye[pairIndex];
+      const secondParticipant = participantsWithBye[participantsWithBye.length - 1 - pairIndex];
+
+      if (!firstParticipant || !secondParticipant) {
+        continue;
+      }
+
+      const shouldSwapHomeAway = roundIndex % 2 === 1;
+      const homeParticipant = shouldSwapHomeAway ? secondParticipant : firstParticipant;
+      const awayParticipant = shouldSwapHomeAway ? firstParticipant : secondParticipant;
+
+      firstLegMatches.push({
         tournamentId,
         phase: 'LEAGUE',
-        round: matchOrder,
+        round: roundIndex + 1,
         homeParticipantId: homeParticipant.id,
         awayParticipantId: awayParticipant.id,
         status: 'PENDING',
         matchOrder,
       });
       matchOrder += 1;
+    }
 
-      if (isTwoLegged) {
-        matchesToCreate.push({
-          tournamentId,
-          phase: 'LEAGUE',
-          round: matchOrder,
-          homeParticipantId: awayParticipant.id,
-          awayParticipantId: homeParticipant.id,
-          status: 'PENDING',
-          matchOrder,
-        });
-        matchOrder += 1;
-      }
+    const fixedParticipant = participantsWithBye[0];
+    const rotatingParticipants = participantsWithBye.slice(1);
+    const lastParticipant = rotatingParticipants.pop() ?? null;
+    participantsWithBye.splice(1, participantsWithBye.length - 1);
+    participantsWithBye.push(lastParticipant, ...rotatingParticipants);
+    participantsWithBye[0] = fixedParticipant;
+  }
+
+  matchesToCreate.push(...firstLegMatches);
+
+  if (isTwoLegged) {
+    const secondLegRoundOffset = roundsCount;
+
+    for (const match of firstLegMatches) {
+      matchesToCreate.push({
+        tournamentId,
+        phase: 'LEAGUE',
+        round: match.round + secondLegRoundOffset,
+        homeParticipantId: match.awayParticipantId,
+        awayParticipantId: match.homeParticipantId,
+        status: 'PENDING',
+        matchOrder,
+      });
+      matchOrder += 1;
     }
   }
 

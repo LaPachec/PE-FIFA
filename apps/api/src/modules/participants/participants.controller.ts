@@ -91,6 +91,15 @@ export const participantsController = {
     response.status(200).json(participant);
   },
 
+  async approveAllPending(request: Request, response: Response) {
+    const participants = await participantsService.approveAllPending(
+      getParam(request, 'tournamentId'),
+      getAuthenticatedUserId(request),
+    );
+
+    response.status(200).json(participants);
+  },
+
   async reject(request: Request, response: Response) {
     const participant = await participantsService.reject(
       getParam(request, 'id'),

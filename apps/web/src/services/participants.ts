@@ -60,6 +60,15 @@ export function approveParticipant(id: string) {
   });
 }
 
+export function approveAllPendingParticipants(tournamentId: string) {
+  return authenticatedRequest<Participant[]>(
+    `/tournaments/${tournamentId}/participants/pending/approve-all`,
+    {
+      method: 'PATCH',
+    },
+  );
+}
+
 export function rejectParticipant(id: string) {
   return authenticatedRequest<Participant>(`/participants/${id}/reject`, {
     method: 'PATCH',
